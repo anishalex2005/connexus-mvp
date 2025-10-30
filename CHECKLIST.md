@@ -182,3 +182,32 @@ Use this section to track Task 4 progress and outputs.
 
 - Platform config steps require Flutter SDK. Once installed, follow the file edits outlined in Task 4 to update Android/iOS.
 
+
+# ConnexUS Task 5 Checklist (Configure Git Repository & Branching Strategy)
+
+Use this section to track Task 5 progress and outputs.
+
+## Task 5 Deliverables
+
+- [x] Git repository initialized at project root
+- [x] Initial commit created with existing project files
+- [x] `.gitignore` added with Flutter/Dart/IDE patterns
+- [x] `BRANCHING_STRATEGY.md` documented
+- [x] GitHub PR template added: `.github/pull_request_template.md`
+- [x] Issue templates added: `.github/ISSUE_TEMPLATE/{bug_report.md,feature_request.md,task.md}`
+- [x] Branch protection documentation: `.github/branch-protection-config.md`
+- [x] Pre-commit hook added: `.githooks/pre-commit` and hooksPath configured
+- [x] `develop` branch created locally
+- [ ] Remote repository connected and branches pushed
+- [ ] Branch protection rules configured in GitHub UI
+
+## Commands
+
+- Verify repo: `git status && git branch -a && git remote -v`
+- Configure hooks: `git config core.hooksPath .githooks`
+- Create develop: `git checkout -b develop`
+- Push branches (after remote): `git push -u origin main && git push -u origin develop`
+
+## Notes
+
+- Remote creation/push and branch protection require GitHub/GitLab access.

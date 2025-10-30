@@ -1,0 +1,32 @@
+#!/bin/sh
+# Pre-commit hook for Flutter project
+
+echo "Running pre-commit checks..."
+
+# Flutter format check
+echo "Checking dart format..."
+flutter format --set-exit-if-changed lib test
+if [ $? -ne 0 ]; then
+    echo "❌ Dart format check failed. Please run 'flutter format lib test'"
+    exit 1
+fi
+
+# Flutter analyze
+echo "Running flutter analyze..."
+flutter analyze
+if [ $? -ne 0 ]; then
+    echo "❌ Flutter analyze failed. Please fix the issues above."
+    exit 1
+fi
+
+# Run tests (optional - can be slow)
+# echo "Running tests..."
+# flutter test
+# if [ $? -ne 0 ]; then
+#     echo "❌ Tests failed. Please fix failing tests."
+#     exit 1
+# fi
+
+echo "✅ All pre-commit checks passed!"
+
+
