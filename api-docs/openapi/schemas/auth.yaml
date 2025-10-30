@@ -1,0 +1,102 @@
+LoginRequest:
+  type: object
+  required:
+    - email
+    - password
+  properties:
+    email:
+      type: string
+      format: email
+      example: "user@example.com"
+    password:
+      type: string
+      format: password
+      minLength: 8
+      example: "SecurePass123!"
+    rememberMe:
+      type: boolean
+      default: false
+
+LoginResponse:
+  type: object
+  required:
+    - accessToken
+    - refreshToken
+    - user
+  properties:
+    accessToken:
+      type: string
+      description: JWT access token (expires in 1 hour)
+    refreshToken:
+      type: string
+      description: JWT refresh token (expires in 30 days)
+    expiresIn:
+      type: integer
+      description: Access token expiration time in seconds
+      example: 3600
+    tokenType:
+      type: string
+      default: "Bearer"
+    user:
+      $ref: './user.yaml#/User'
+
+RegisterRequest:
+  type: object
+  required:
+    - email
+    - password
+    - firstName
+    - lastName
+    - phoneNumber
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+      format: password
+      minLength: 8
+      pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
+      description: Must contain uppercase, lowercase, number, and special character
+    firstName:
+      type: string
+      minLength: 1
+      maxLength: 50
+    lastName:
+      type: string
+      minLength: 1
+      maxLength: 50
+    phoneNumber:
+      type: string
+      pattern: '^\+[1-9]\d{1,14}$'
+    acceptTerms:
+      type: boolean
+      description: User must accept terms of service
+    marketingConsent:
+      type: boolean
+      default: false
+
+PasswordResetRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+
+PasswordResetConfirm:
+  type: object
+  required:
+    - token
+    - newPassword
+  properties:
+    token:
+      type: string
+      description: Reset token from email
+    newPassword:
+      type: string
+      format: password
+      minLength: 8
+
+

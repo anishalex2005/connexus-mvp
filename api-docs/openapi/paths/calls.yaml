@@ -1,0 +1,399 @@
+/calls/initiate:
+  post:
+    tags:
+      - Calls
+    summary: Initiate outbound call
+    description: Initiates a new outbound call to specified number
+    operationId: initiateCall
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InitiateCallRequest'
+    responses:
+      '201':
+        description: Call initiated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                callId:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum: [connecting, ringing]
+                estimatedWaitTime:
+                  type: integer
+                  description: Estimated connection time in seconds
+
+/calls/incoming:
+  post:
+    tags:
+      - Calls
+    summary: Handle incoming call webhook
+    description: Webhook endpoint for Telnyx to notify of incoming calls
+    operationId: incomingCallWebhook
+    security:
+      - ApiKeyAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              callId:
+                type: string
+              from:
+                type: string
+              to:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Webhook processed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  enum: [accept, reject, forward]
+                forwardTo:
+                  type: string
+                  description: Number to forward to (if action is forward)
+
+/calls/history:
+  get:
+    tags:
+      - Calls
+    summary: Get call history
+    description: Returns paginated list of user's call history
+    operationId: getCallHistory
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - in: query
+        name: direction
+        schema:
+          type: string
+          enum: [inbound, outbound]
+      - in: query
+        name: startDate
+        schema:
+          type: string
+          format: date
+        description: Filter calls from this date (inclusive)
+      - in: query
+        name: endDate
+        schema:
+          type: string
+          format: date
+        description: Filter calls until this date (inclusive)
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search by phone number or contact name
+    responses:
+      '200':
+        description: Call history retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                calls:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Call'
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                    limit:
+                      type: integer
+                    total:
+                      type: integer
+                    totalPages:
+                      type: integer
+
+/calls/{callId}:
+  get:
+    tags:
+      - Calls
+    summary: Get call details
+    description: Returns detailed information about a specific call
+    operationId: getCallDetails
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Call details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Call'
+
+/calls/{callId}/answer:
+  post:
+    tags:
+      - Calls
+    summary: Answer incoming call
+    description: Answers an incoming call
+    operationId: answerCall
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Call answered successfully
+
+/calls/{callId}/decline:
+  post:
+    tags:
+      - Calls
+    summary: Decline incoming call
+    description: Declines/rejects an incoming call
+    operationId: declineCall
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                enum: [busy, declined, do_not_disturb]
+                default: declined
+    responses:
+      '200':
+        description: Call declined successfully
+
+/calls/{callId}/end:
+  post:
+    tags:
+      - Calls
+    summary: End active call
+    description: Ends an active call
+    operationId: endCall
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Call ended successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  type: integer
+                  description: Call duration in seconds
+
+/calls/{callId}/transfer:
+  post:
+    tags:
+      - Calls
+    summary: Transfer call
+    description: Transfers an active call to another number
+    operationId: transferCall
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferCallRequest'
+    responses:
+      '200':
+        description: Call transferred successfully
+
+/calls/{callId}/hold:
+  post:
+    tags:
+      - Calls
+    summary: Hold/unhold call
+    description: Toggles hold state on active call
+    operationId: toggleCallHold
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              hold:
+                type: boolean
+                description: True to hold, false to unhold
+    responses:
+      '200':
+        description: Hold state changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isOnHold:
+                  type: boolean
+
+/calls/{callId}/mute:
+  post:
+    tags:
+      - Calls
+    summary: Mute/unmute call
+    description: Toggles mute state on active call
+    operationId: toggleCallMute
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              mute:
+                type: boolean
+                description: True to mute, false to unmute
+    responses:
+      '200':
+        description: Mute state changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isMuted:
+                  type: boolean
+
+/calls/{callId}/notes:
+  get:
+    tags:
+      - Calls
+    summary: Get call notes
+    description: Returns notes associated with a call
+    operationId: getCallNotes
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Notes retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+                      createdBy:
+                        type: string
+  post:
+    tags:
+      - Calls
+    summary: Add call note
+    description: Adds a note to a call
+    operationId: addCallNote
+    parameters:
+      - in: path
+        name: callId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - content
+            properties:
+              content:
+                type: string
+                maxLength: 1000
+    responses:
+      '201':
+        description: Note added successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                noteId:
+                  type: string
+                  format: uuid
+
+

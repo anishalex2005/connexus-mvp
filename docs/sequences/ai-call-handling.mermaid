@@ -1,0 +1,46 @@
+sequenceDiagram
+    participant Caller
+    participant Telnyx
+    participant CallService
+    participant AIService
+    participant Retell
+    participant Agent
+    
+    Caller->>Telnyx: Incoming call
+    Telnyx->>CallService: Call webhook
+    CallService->>CallService: Check business hours
+    
+    alt During business hours
+        CallService->>AIService: Start AI session
+        AIService->>Retell: Initialize agent
+        Retell-->>AIService: Agent ready
+        
+        CallService->>Telnyx: Answer call
+        Telnyx->>Caller: Connected
+        
+        loop Conversation
+            Caller->>Telnyx: Speech
+            Telnyx->>AIService: Audio stream
+            AIService->>Retell: Process speech
+            Retell->>Retell: Analyze intent
+            
+            alt FAQ Match
+                Retell-->>AIService: FAQ response
+            else Transfer Required
+                Retell-->>AIService: Transfer signal
+                AIService->>CallService: Initiate transfer
+                CallService->>Agent: Route call
+                Agent->>Caller: Agent connected
+            else Continue AI
+                Retell-->>AIService: AI response
+                AIService->>Telnyx: Speech response
+                Telnyx->>Caller: AI speech
+            end
+        end
+        
+    else After hours
+        CallService->>Telnyx: Play after-hours message
+        CallService->>CallService: Log to voicemail
+    end
+
+

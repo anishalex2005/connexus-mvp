@@ -1,0 +1,550 @@
+openapi: 3.0.0
+info:
+  title: ConnexUS API
+  version: 1.0.0
+  description: API specification for ConnexUS mobile calling app
+
+servers:
+  - url: https://api.connexus.com/v1
+    description: Production server
+  - url: https://staging-api.connexus.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+paths:
+  /auth/register:
+    post:
+      summary: Register new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, fullName, phoneNumber]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+                  pattern: '^\+[1-9]\d{1,14}$'
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/login:
+    post:
+      summary: User login
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        200:
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+  /users/profile:
+    get:
+      summary: Get user profile
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      summary: Update user profile
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        200:
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/phone-numbers:
+    get:
+      summary: Get user phone numbers
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: List of phone numbers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhoneNumber'
+    post:
+      summary: Add phone number
+      tags: [User]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [number]
+              properties:
+                number:
+                  type: string
+                label:
+                  type: string
+      responses:
+        201:
+          description: Phone number added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumber'
+
+  /calls/initiate:
+    post:
+      summary: Initiate outgoing call
+      tags: [Calls]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, from]
+              properties:
+                to:
+                  type: string
+                from:
+                  type: string
+                enableAI:
+                  type: boolean
+                  default: false
+      responses:
+        200:
+          description: Call initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Call'
+
+  /calls/history:
+    get:
+      summary: Get call history
+      tags: [Calls]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, incoming, outgoing, missed]
+      responses:
+        200:
+          description: Call history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  calls:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CallRecord'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /calls/{callId}:
+    get:
+      summary: Get call details
+      tags: [Calls]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: Call details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallRecord'
+
+  /calls/transfer:
+    post:
+      summary: Transfer active call
+      tags: [Calls]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [callId, targetNumber]
+              properties:
+                callId:
+                  type: string
+                targetNumber:
+                  type: string
+                transferType:
+                  type: string
+                  enum: [blind, warm]
+                  default: blind
+      responses:
+        200:
+          description: Call transferred
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+
+  /ai/config:
+    get:
+      summary: Get AI configuration
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: AI configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIConfig'
+    put:
+      summary: Update AI configuration
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIConfig'
+      responses:
+        200:
+          description: Configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIConfig'
+
+  /ai/knowledge-base:
+    post:
+      summary: Upload knowledge base
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  maxLength: 5000
+                category:
+                  type: string
+      responses:
+        201:
+          description: Knowledge base updated
+
+  /ai/faqs:
+    get:
+      summary: Get FAQs
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        200:
+          description: FAQ list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FAQ'
+    post:
+      summary: Create FAQ
+      tags: [AI]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FAQ'
+      responses:
+        201:
+          description: FAQ created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FAQ'
+
+  /sms/send:
+    post:
+      summary: Send SMS
+      tags: [SMS]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, message]
+              properties:
+                to:
+                  type: string
+                message:
+                  type: string
+                  maxLength: 1600
+                templateId:
+                  type: string
+      responses:
+        200:
+          description: SMS sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messageId: { type: string }
+                  status: { type: string }
+
+  /sms/templates:
+    get:
+      summary: Get SMS templates
+      tags: [SMS]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200:
+          description: Template list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SMSTemplate'
+    post:
+      summary: Create SMS template
+      tags: [SMS]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMSTemplate'
+      responses:
+        201:
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMSTemplate'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        fullName: { type: string }
+        phoneNumbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhoneNumber'
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    UserUpdate:
+      type: object
+      properties:
+        fullName: { type: string }
+        defaultPhoneNumber: { type: string }
+
+    PhoneNumber:
+      type: object
+      properties:
+        id: { type: string }
+        number: { type: string }
+        label: { type: string }
+        isPrimary: { type: boolean }
+        isVerified: { type: boolean }
+
+    Call:
+      type: object
+      properties:
+        id: { type: string }
+        callSid: { type: string }
+        status:
+          type: string
+          enum: [initiated, ringing, answered, completed, failed]
+
+    CallRecord:
+      type: object
+      properties:
+        id: { type: string }
+        phoneNumber: { type: string }
+        contactName: { type: string }
+        type:
+          type: string
+          enum: [incoming, outgoing]
+        timestamp: { type: string, format: date-time }
+        duration: { type: integer }
+        wasAIHandled: { type: boolean }
+        notes: { type: string }
+
+    AIConfig:
+      type: object
+      properties:
+        agentName: { type: string }
+        personality:
+          type: object
+          properties:
+            tone: { type: string, enum: [professional, friendly, casual] }
+            responseLength: { type: string, enum: [brief, moderate, detailed] }
+        greeting: { type: string }
+        businessHours: { type: object }
+        voiceSettings: { type: object }
+
+    FAQ:
+      type: object
+      required: [question, answer]
+      properties:
+        id: { type: string }
+        question: { type: string }
+        answer: { type: string }
+        category: { type: string }
+        keywords:
+          type: array
+          items: { type: string }
+
+    SMSTemplate:
+      type: object
+      required: [title, message]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        message: { type: string }
+        category: { type: string }
+        variables:
+          type: array
+          items: { type: string }
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+
+

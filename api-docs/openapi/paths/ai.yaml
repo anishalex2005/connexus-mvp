@@ -1,0 +1,361 @@
+/ai/config:
+  get:
+    tags:
+      - AI
+    summary: Get AI agent configuration
+    description: Returns current AI agent configuration
+    operationId: getAIConfig
+    responses:
+      '200':
+        description: Configuration retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIConfiguration'
+  put:
+    tags:
+      - AI
+    summary: Update AI agent configuration
+    description: Updates AI agent settings and personality
+    operationId: updateAIConfig
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AIConfiguration'
+    responses:
+      '200':
+        description: Configuration updated successfully
+
+/ai/knowledge-base:
+  get:
+    tags:
+      - AI
+    summary: Get knowledge base content
+    description: Returns current knowledge base content
+    operationId: getKnowledgeBase
+    responses:
+      '200':
+        description: Knowledge base retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: Knowledge base content in markdown format
+                lastUpdated:
+                  type: string
+                  format: date-time
+                characterCount:
+                  type: integer
+  post:
+    tags:
+      - AI
+    summary: Update knowledge base
+    description: Updates AI agent's knowledge base content
+    operationId: updateKnowledgeBase
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - content
+            properties:
+              content:
+                type: string
+                maxLength: 10000
+                description: Knowledge base content in markdown format
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+                description: File containing knowledge base (txt, pdf, docx)
+    responses:
+      '200':
+        description: Knowledge base updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                processed:
+                  type: boolean
+                characterCount:
+                  type: integer
+                warnings:
+                  type: array
+                  items:
+                    type: string
+
+/ai/faqs:
+  get:
+    tags:
+      - AI
+    summary: List FAQs
+    description: Returns list of frequently asked questions
+    operationId: getFAQs
+    parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+    responses:
+      '200':
+        description: FAQs retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                faqs:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FAQ'
+                pagination:
+                  $ref: '#/components/schemas/Pagination'
+  post:
+    tags:
+      - AI
+    summary: Create FAQ
+    description: Creates a new FAQ entry
+    operationId: createFAQ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - question
+              - answer
+            properties:
+              question:
+                type: string
+                maxLength: 500
+              answer:
+                type: string
+                maxLength: 2000
+              category:
+                type: string
+                maxLength: 50
+              keywords:
+                type: array
+                items:
+                  type: string
+                maxItems: 10
+              priority:
+                type: integer
+                minimum: 1
+                maximum: 10
+                default: 5
+    responses:
+      '201':
+        description: FAQ created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FAQ'
+
+/ai/faqs/import:
+  post:
+    tags:
+      - AI
+    summary: Import FAQs from CSV
+    description: Bulk import FAQs from CSV file
+    operationId: importFAQs
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - file
+            properties:
+              file:
+                type: string
+                format: binary
+                description: CSV file with columns question, answer, category, keywords
+              overwrite:
+                type: boolean
+                default: false
+                description: Whether to overwrite existing FAQs
+    responses:
+      '200':
+        description: FAQs imported successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imported:
+                  type: integer
+                skipped:
+                  type: integer
+                errors:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      row:
+                        type: integer
+                      error:
+                        type: string
+
+/ai/faqs/{faqId}:
+  get:
+    tags:
+      - AI
+    summary: Get FAQ
+    description: Returns specific FAQ entry
+    operationId: getFAQ
+    parameters:
+      - in: path
+        name: faqId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: FAQ retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FAQ'
+  put:
+    tags:
+      - AI
+    summary: Update FAQ
+    description: Updates existing FAQ entry
+    operationId: updateFAQ
+    parameters:
+      - in: path
+        name: faqId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              question:
+                type: string
+                maxLength: 500
+              answer:
+                type: string
+                maxLength: 2000
+              category:
+                type: string
+                maxLength: 50
+              keywords:
+                type: array
+                items:
+                  type: string
+                maxItems: 10
+              priority:
+                type: integer
+                minimum: 1
+                maximum: 10
+    responses:
+      '200':
+        description: FAQ updated successfully
+  delete:
+    tags:
+      - AI
+    summary: Delete FAQ
+    description: Deletes FAQ entry
+    operationId: deleteFAQ
+    parameters:
+      - in: path
+        name: faqId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '204':
+        description: FAQ deleted successfully
+
+/ai/test:
+  post:
+    tags:
+      - AI
+    summary: Test AI agent
+    description: Tests AI agent with sample input
+    operationId: testAIAgent
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - input
+            properties:
+              input:
+                type: string
+                description: Test prompt for the AI agent
+                maxLength: 500
+              context:
+                type: object
+                properties:
+                  callerName:
+                    type: string
+                  callerNumber:
+                    type: string
+                  timeOfDay:
+                    type: string
+                    enum: [morning, afternoon, evening]
+    responses:
+      '200':
+        description: Test completed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                response:
+                  type: string
+                confidence:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 1
+                processingTime:
+                  type: integer
+                  description: Response time in milliseconds
+                suggestedAction:
+                  type: string
+                  enum: [none, transfer, escalate, take_message]
+
+

@@ -1,0 +1,78 @@
+graph TB
+    subgraph "Client Layer"
+        IOS[iOS App<br/>Flutter]
+        Android[Android App<br/>Flutter]
+    end
+    
+    subgraph "API Gateway"
+        Gateway[API Gateway<br/>Rate Limiting<br/>Authentication]
+    end
+    
+    subgraph "Backend Services"
+        AuthService[Authentication Service<br/>JWT/OAuth]
+        UserService[User Service<br/>Profile Management]
+        CallService[Call Service<br/>Call Management]
+        AIService[AI Service<br/>Retell Integration]
+        SMSService[SMS Service<br/>Template Management]
+    end
+    
+    subgraph "Real-time Layer"
+        WebSocket[WebSocket Server<br/>Socket.IO]
+        PubSub[Pub/Sub<br/>Redis]
+    end
+    
+    subgraph "Data Layer"
+        PostgresMain[(PostgreSQL<br/>Main Database)]
+        RedisCache[(Redis<br/>Cache & Sessions)]
+        S3[S3/Cloud Storage<br/>Media Files]
+    end
+    
+    subgraph "External Services"
+        Telnyx[Telnyx API<br/>Telephony]
+        RetellAI[Retell AI<br/>AI Agent]
+        FCM[FCM/APNs<br/>Push Notifications]
+        Analytics[Analytics<br/>Firebase/Mixpanel]
+    end
+    
+    %% Client connections
+    IOS --> Gateway
+    Android --> Gateway
+    IOS -.-> WebSocket
+    Android -.-> WebSocket
+    
+    %% Gateway to services
+    Gateway --> AuthService
+    Gateway --> UserService
+    Gateway --> CallService
+    Gateway --> AIService
+    Gateway --> SMSService
+    
+    %% Service to data layer
+    AuthService --> PostgresMain
+    AuthService --> RedisCache
+    UserService --> PostgresMain
+    UserService --> RedisCache
+    CallService --> PostgresMain
+    CallService --> PubSub
+    AIService --> PostgresMain
+    SMSService --> PostgresMain
+    
+    %% External service connections
+    CallService --> Telnyx
+    AIService --> RetellAI
+    CallService --> FCM
+    SMSService --> Telnyx
+    
+    %% Real-time connections
+    WebSocket --> PubSub
+    CallService --> WebSocket
+    
+    %% Media storage
+    CallService --> S3
+    UserService --> S3
+    
+    %% Analytics
+    IOS --> Analytics
+    Android --> Analytics
+
+

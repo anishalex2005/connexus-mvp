@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant User
+    participant FlutterApp
+    participant Gateway
+    participant CallService
+    participant Telnyx
+    participant WebSocket
+    participant AIService
+    participant RetellAI
+    
+    %% Incoming Call Flow
+    Note over User,RetellAI: Incoming Call Flow
+    
+    Telnyx->>CallService: Incoming call webhook
+    CallService->>Gateway: Call notification
+    Gateway->>FlutterApp: Push notification
+    FlutterApp->>User: Show incoming call UI
+    User->>FlutterApp: Answer call
+    FlutterApp->>Gateway: Accept call request
+    Gateway->>CallService: Process answer
+    CallService->>Telnyx: Answer SIP call
+    
+    %% Establish WebRTC
+    CallService->>WebSocket: Create call room
+    FlutterApp->>WebSocket: Join call room
+    Telnyx->>FlutterApp: WebRTC negotiation
+    FlutterApp->>Telnyx: Complete handshake
+    
+    %% AI Interaction
+    FlutterApp->>Gateway: Request AI assistance
+    Gateway->>AIService: Process AI request
+    AIService->>RetellAI: Send context
+    RetellAI->>AIService: Return response
+    AIService->>Gateway: Format response
+    Gateway->>FlutterApp: Deliver AI response
+    
+    %% Call End
+    User->>FlutterApp: End call
+    FlutterApp->>Gateway: End call request
+    Gateway->>CallService: Terminate call
+    CallService->>Telnyx: Hangup SIP
+    CallService->>WebSocket: Close room
+
+

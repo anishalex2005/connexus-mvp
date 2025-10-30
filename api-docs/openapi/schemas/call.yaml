@@ -1,0 +1,111 @@
+Call:
+  type: object
+  required:
+    - id
+    - status
+    - direction
+    - startTime
+  properties:
+    id:
+      type: string
+      format: uuid
+    phoneNumber:
+      type: string
+      description: The other party's phone number
+    contactName:
+      type: string
+      nullable: true
+    direction:
+      type: string
+      enum: [inbound, outbound]
+    status:
+      type: string
+      enum: [ringing, answered, ended, missed, failed, transferring]
+    startTime:
+      type: string
+      format: date-time
+    answerTime:
+      type: string
+      format: date-time
+      nullable: true
+    endTime:
+      type: string
+      format: date-time
+      nullable: true
+    duration:
+      type: integer
+      description: Call duration in seconds
+      nullable: true
+    recordingUrl:
+      type: string
+      format: uri
+      nullable: true
+    aiHandled:
+      type: boolean
+      default: false
+    aiTranscript:
+      type: string
+      nullable: true
+    transferredTo:
+      type: string
+      nullable: true
+    quality:
+      $ref: '#/CallQuality'
+
+CallQuality:
+  type: object
+  properties:
+    packetLoss:
+      type: number
+      format: float
+      minimum: 0
+      maximum: 100
+      description: Packet loss percentage
+    latency:
+      type: integer
+      description: Latency in milliseconds
+    jitter:
+      type: integer
+      description: Jitter in milliseconds
+    mos:
+      type: number
+      format: float
+      minimum: 1
+      maximum: 5
+      description: Mean Opinion Score
+
+InitiateCallRequest:
+  type: object
+  required:
+    - to
+  properties:
+    to:
+      type: string
+      description: Phone number to call
+      pattern: '^\+[1-9]\d{1,14}$'
+    from:
+      type: string
+      description: Caller ID to use (must be verified number)
+      pattern: '^\+[1-9]\d{1,14}$'
+    aiEnabled:
+      type: boolean
+      default: true
+      description: Whether AI agent should handle the call
+
+TransferCallRequest:
+  type: object
+  required:
+    - to
+  properties:
+    to:
+      type: string
+      description: Phone number to transfer to
+    type:
+      type: string
+      enum: [blind, warm]
+      default: blind
+    message:
+      type: string
+      description: Optional message for warm transfer
+
+

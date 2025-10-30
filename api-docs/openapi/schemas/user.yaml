@@ -1,0 +1,98 @@
+User:
+  type: object
+  required:
+    - id
+    - email
+    - createdAt
+  properties:
+    id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    email:
+      type: string
+      format: email
+      example: "user@example.com"
+    firstName:
+      type: string
+      example: "John"
+    lastName:
+      type: string
+      example: "Doe"
+    phoneNumbers:
+      type: array
+      items:
+        $ref: '#/PhoneNumber'
+    avatar:
+      type: string
+      format: uri
+      example: "https://api.connexus.app/avatars/user123.jpg"
+    createdAt:
+      type: string
+      format: date-time
+      example: "2024-01-15T09:30:00Z"
+    updatedAt:
+      type: string
+      format: date-time
+      example: "2024-01-15T10:45:00Z"
+    preferences:
+      $ref: '#/UserPreferences'
+
+PhoneNumber:
+  type: object
+  required:
+    - id
+    - number
+    - isPrimary
+  properties:
+    id:
+      type: string
+      format: uuid
+    number:
+      type: string
+      pattern: '^\+[1-9]\d{1,14}$'
+      example: "+14155552671"
+    label:
+      type: string
+      enum: [mobile, home, work, other]
+      default: mobile
+    isPrimary:
+      type: boolean
+      default: false
+    isVerified:
+      type: boolean
+      default: false
+    verifiedAt:
+      type: string
+      format: date-time
+
+UserPreferences:
+  type: object
+  properties:
+    theme:
+      type: string
+      enum: [light, dark, system]
+      default: system
+    notifications:
+      type: object
+      properties:
+        calls:
+          type: boolean
+          default: true
+        sms:
+          type: boolean
+          default: true
+        marketing:
+          type: boolean
+          default: false
+    audioSettings:
+      type: object
+      properties:
+        defaultToSpeaker:
+          type: boolean
+          default: false
+        ringtone:
+          type: string
+          default: "default"
+
+

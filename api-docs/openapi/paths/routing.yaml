@@ -1,0 +1,71 @@
+/routing/rules:
+  get:
+    tags:
+      - Routing
+    summary: List routing rules
+    description: Returns list of call routing rules
+    operationId: getRoutingRules
+    responses:
+      '200':
+        description: Routing rules retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rules:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RoutingRule'
+  post:
+    tags:
+      - Routing
+    summary: Create routing rule
+    description: Creates a new routing rule
+    operationId: createRoutingRule
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RoutingRule'
+    responses:
+      '201':
+        description: Routing rule created successfully
+
+/routing/departments:
+  get:
+    tags:
+      - Routing
+    summary: List departments
+    description: Returns list of departments for routing
+    operationId: getDepartments
+    responses:
+      '200':
+        description: Departments retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                departments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Department'
+  post:
+    tags:
+      - Routing
+    summary: Create department
+    description: Creates a new department
+    operationId: createDepartment
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Department'
+    responses:
+      '201':
+        description: Department created successfully
+
+

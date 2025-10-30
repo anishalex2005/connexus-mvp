@@ -1,0 +1,18 @@
+flowchart LR
+    subgraph "SMS Sending Flow"
+        A[User in Call] --> B{Select Action}
+        B -->|Template| C[Choose Template]
+        B -->|Custom| D[Compose Message]
+        C --> E[Preview Message]
+        D --> E
+        E --> F[Variable Replacement]
+        F --> G[Send via Telnyx]
+        G --> H{Success?}
+        H -->|Yes| I[Update UI<br/>Show Status]
+        H -->|No| J[Queue for Retry]
+        J --> G
+        I --> K[Store in History]
+        J --> L[Show Error]
+    end
+
+

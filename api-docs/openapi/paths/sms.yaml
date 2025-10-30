@@ -1,0 +1,255 @@
+/sms/send:
+  post:
+    tags:
+      - SMS
+    summary: Send SMS message
+    description: Sends an SMS message to specified recipient
+    operationId: sendSMS
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - to
+              - message
+            properties:
+              to:
+                type: string
+                pattern: '^\+[1-9]\d{1,14}$'
+                description: Recipient phone number
+              from:
+                type: string
+                pattern: '^\+[1-9]\d{1,14}$'
+                description: Sender phone number (must be verified)
+              message:
+                type: string
+                maxLength: 1600
+                description: SMS message content
+              templateId:
+                type: string
+                format: uuid
+              templateVariables:
+                type: object
+                additionalProperties: true
+              scheduleAt:
+                type: string
+                format: date-time
+                description: Schedule message for future delivery
+    responses:
+      '201':
+        description: SMS sent successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageId:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum: [sent, queued, scheduled]
+                segments:
+                  type: integer
+                  description: Number of SMS segments used
+                scheduledFor:
+                  type: string
+                  format: date-time
+
+/sms/templates:
+  get:
+    tags:
+      - SMS
+    summary: List SMS templates
+    description: Returns list of user's SMS templates
+    operationId: getSMSTemplates
+    parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum: [greeting, followup, business_hours, out_of_office, custom]
+      - in: query
+        name: search
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Templates retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                templates:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SMSTemplate'
+  post:
+    tags:
+      - SMS
+    summary: Create SMS template
+    description: Creates a new SMS template
+    operationId: createSMSTemplate
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - title
+              - message
+            properties:
+              title:
+                type: string
+                maxLength: 100
+              message:
+                type: string
+                maxLength: 1600
+              category:
+                type: string
+                enum: [greeting, followup, business_hours, out_of_office, custom]
+              variables:
+                type: array
+                items:
+                  type: string
+    responses:
+      '201':
+        description: Template created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMSTemplate'
+
+/sms/templates/{templateId}:
+  get:
+    tags:
+      - SMS
+    summary: Get SMS template
+    description: Returns specific SMS template
+    operationId: getSMSTemplate
+    parameters:
+      - in: path
+        name: templateId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Template retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMSTemplate'
+  put:
+    tags:
+      - SMS
+    summary: Update SMS template
+    description: Updates existing SMS template
+    operationId: updateSMSTemplate
+    parameters:
+      - in: path
+        name: templateId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+                maxLength: 100
+              message:
+                type: string
+                maxLength: 1600
+              category:
+                type: string
+                enum: [greeting, followup, business_hours, out_of_office, custom]
+    responses:
+      '200':
+        description: Template updated successfully
+  delete:
+    tags:
+      - SMS
+    summary: Delete SMS template
+    description: Deletes SMS template
+    operationId: deleteSMSTemplate
+    parameters:
+      - in: path
+        name: templateId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '204':
+        description: Template deleted successfully
+
+/sms/history:
+  get:
+    tags:
+      - SMS
+    summary: Get SMS history
+    description: Returns history of sent SMS messages
+    operationId: getSMSHistory
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [sent, delivered, failed]
+    responses:
+      '200':
+        description: SMS history retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      to:
+                        type: string
+                      message:
+                        type: string
+                      status:
+                        type: string
+                        enum: [sent, delivered, failed]
+                      sentAt:
+                        type: string
+                        format: date-time
+                      deliveredAt:
+                        type: string
+                        format: date-time
+                      segments:
+                        type: integer
+
+

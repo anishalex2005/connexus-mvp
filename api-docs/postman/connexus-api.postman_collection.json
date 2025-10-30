@@ -1,0 +1,93 @@
+{
+  "info": {
+    "name": "ConnexUS API",
+    "description": "API collection for ConnexUS mobile calling app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000/v1", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "refresh_token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"+14155552671\",\n  \"acceptTerms\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/users/profile", "host": ["{{base_url}}"], "path": ["users", "profile"] } }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}/users/profile", "host": ["{{base_url}}"], "path": ["users", "profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Calls",
+      "item": [
+        {
+          "name": "Initiate Call",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "raw", "raw": "{\n  \"to\": \"+14155552672\",\n  \"aiEnabled\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{base_url}}/calls/initiate", "host": ["{{base_url}}"], "path": ["calls", "initiate"] }
+          }
+        },
+        {
+          "name": "Get Call History",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/calls/history?page=1&limit=20", "host": ["{{base_url}}"], "path": ["calls", "history"], "query": [{"key":"page","value":"1"},{"key":"limit","value":"20"}] } }
+        }
+      ]
+    }
+  ]
+}
+
+

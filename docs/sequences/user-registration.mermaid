@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant User
+    participant App
+    participant Gateway
+    participant AuthService
+    participant Database
+    participant EmailService
+    participant Telnyx
+    
+    User->>App: Enter registration info
+    App->>App: Validate input
+    App->>Gateway: POST /auth/register
+    Gateway->>AuthService: Register user
+    
+    AuthService->>Database: Check if user exists
+    Database-->>AuthService: User not found
+    
+    AuthService->>AuthService: Hash password
+    AuthService->>Database: Create user record
+    Database-->>AuthService: User created
+    
+    AuthService->>Telnyx: Provision phone number
+    Telnyx-->>AuthService: Number provisioned
+    
+    AuthService->>EmailService: Send verification email
+    EmailService-->>User: Verification email
+    
+    AuthService->>Gateway: Return tokens
+    Gateway->>App: Registration success
+    App->>App: Store tokens securely
+    App->>User: Navigate to home
+
+

@@ -1,0 +1,90 @@
+/analytics/summary:
+  get:
+    tags:
+      - Analytics
+    summary: Get analytics summary
+    description: Returns summary of call analytics
+    operationId: getAnalyticsSummary
+    parameters:
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum: [today, week, month, quarter, year, custom]
+          default: week
+      - in: query
+        name: startDate
+        schema:
+          type: string
+          format: date
+        description: For custom period
+      - in: query
+        name: endDate
+        schema:
+          type: string
+          format: date
+        description: For custom period
+    responses:
+      '200':
+        description: Analytics summary retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                totalCalls:
+                  type: integer
+                averageDuration:
+                  type: integer
+                  description: Average call duration in seconds
+                missedCallRate:
+                  type: number
+                  format: float
+                aiHandlingRate:
+                  type: number
+                  format: float
+                topNumbers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      number:
+                        type: string
+                      count:
+                        type: integer
+
+/analytics/export:
+  post:
+    tags:
+      - Analytics
+    summary: Export call data
+    description: Exports call history as CSV
+    operationId: exportCallData
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              startDate:
+                type: string
+                format: date
+              endDate:
+                type: string
+                format: date
+              fields:
+                type: array
+                items:
+                  type: string
+                  enum: [date, number, duration, type, aiHandled, notes]
+    responses:
+      '200':
+        description: Export generated successfully
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+
+

@@ -1,0 +1,234 @@
+/users/profile:
+  get:
+    tags:
+      - Users
+    summary: Get current user profile
+    description: Returns authenticated user's profile information
+    operationId: getUserProfile
+    responses:
+      '200':
+        description: User profile retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+  put:
+    tags:
+      - Users
+    summary: Update user profile
+    description: Updates authenticated user's profile information
+    operationId: updateUserProfile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              firstName:
+                type: string
+              lastName:
+                type: string
+              avatar:
+                type: string
+                format: uri
+    responses:
+      '200':
+        description: Profile updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+
+/users/phone-numbers:
+  get:
+    tags:
+      - Users
+    summary: List user's phone numbers
+    description: Returns all phone numbers associated with the user
+    operationId: getUserPhoneNumbers
+    responses:
+      '200':
+        description: Phone numbers retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phoneNumbers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PhoneNumber'
+  post:
+    tags:
+      - Users
+    summary: Add phone number
+    description: Adds a new phone number to user account
+    operationId: addPhoneNumber
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - number
+            properties:
+              number:
+                type: string
+                pattern: '^\+[1-9]\d{1,14}$'
+              label:
+                type: string
+                enum: [mobile, home, work, other]
+              makePrimary:
+                type: boolean
+                default: false
+    responses:
+      '201':
+        description: Phone number added successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phoneNumber:
+                  $ref: '#/components/schemas/PhoneNumber'
+                verificationRequired:
+                  type: boolean
+                  description: Whether SMS verification was sent
+
+/users/phone-numbers/{phoneNumberId}:
+  put:
+    tags:
+      - Users
+    summary: Update phone number
+    description: Updates phone number settings
+    operationId: updatePhoneNumber
+    parameters:
+      - in: path
+        name: phoneNumberId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              label:
+                type: string
+                enum: [mobile, home, work, other]
+              makePrimary:
+                type: boolean
+    responses:
+      '200':
+        description: Phone number updated successfully
+  delete:
+    tags:
+      - Users
+    summary: Remove phone number
+    description: Removes phone number from user account
+    operationId: deletePhoneNumber
+    parameters:
+      - in: path
+        name: phoneNumberId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '204':
+        description: Phone number removed successfully
+
+/users/phone-numbers/{phoneNumberId}/verify:
+  post:
+    tags:
+      - Users
+    summary: Verify phone number
+    description: Verifies phone number with SMS code
+    operationId: verifyPhoneNumber
+    parameters:
+      - in: path
+        name: phoneNumberId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                type: string
+                pattern: '^[0-9]{6}$'
+                description: 6-digit verification code
+    responses:
+      '200':
+        description: Phone number verified successfully
+
+/users/preferences:
+  get:
+    tags:
+      - Users
+    summary: Get user preferences
+    description: Returns user's app preferences and settings
+    operationId: getUserPreferences
+    responses:
+      '200':
+        description: Preferences retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+  put:
+    tags:
+      - Users
+    summary: Update user preferences
+    description: Updates user's app preferences and settings
+    operationId: updateUserPreferences
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserPreferences'
+    responses:
+      '200':
+        description: Preferences updated successfully
+
+/users/fcm-token:
+  post:
+    tags:
+      - Users
+    summary: Register FCM token
+    description: Registers Firebase Cloud Messaging token for push notifications
+    operationId: registerFCMToken
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - token
+              - platform
+            properties:
+              token:
+                type: string
+                description: FCM token from mobile app
+              platform:
+                type: string
+                enum: [ios, android]
+    responses:
+      '200':
+        description: FCM token registered successfully
+
+

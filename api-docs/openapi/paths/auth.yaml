@@ -1,0 +1,181 @@
+/auth/register:
+  post:
+    tags:
+      - Authentication
+    summary: Register new user account
+    description: |
+      Creates a new user account with email and password.
+      Sends verification email upon successful registration.
+    operationId: register
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterRequest'
+    responses:
+      '201':
+        description: User successfully registered
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Registration successful. Please check your email to verify your account."
+                userId:
+                  type: string
+                  format: uuid
+      '400':
+        description: Invalid input data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Email already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+/auth/login:
+  post:
+    tags:
+      - Authentication
+    summary: User login
+    description: Authenticates user and returns JWT tokens
+    operationId: login
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginRequest'
+    responses:
+      '200':
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginResponse'
+
+/auth/refresh:
+  post:
+    tags:
+      - Authentication
+    summary: Refresh access token
+    description: Uses refresh token to get new access token
+    operationId: refreshToken
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - refreshToken
+            properties:
+              refreshToken:
+                type: string
+                description: Refresh token from login
+    responses:
+      '200':
+        description: Token refreshed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                expiresIn:
+                  type: integer
+
+/auth/logout:
+  post:
+    tags:
+      - Authentication
+    summary: Logout user
+    description: Invalidates current tokens and ends session
+    operationId: logout
+    responses:
+      '200':
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Logged out successfully"
+
+/auth/reset-password:
+  post:
+    tags:
+      - Authentication
+    summary: Request password reset
+    description: Sends password reset email with token
+    operationId: requestPasswordReset
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PasswordResetRequest'
+    responses:
+      '200':
+        description: Reset email sent if email exists
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "If an account exists with this email, a reset link has been sent"
+
+/auth/reset-password/confirm:
+  post:
+    tags:
+      - Authentication
+    summary: Confirm password reset
+    description: Updates password using reset token
+    operationId: confirmPasswordReset
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PasswordResetConfirm'
+    responses:
+      '200':
+        description: Password reset successful
+
+/auth/verify-email:
+  get:
+    tags:
+      - Authentication
+    summary: Verify email address
+    description: Confirms email using verification token from email
+    operationId: verifyEmail
+    security: []
+    parameters:
+      - in: query
+        name: token
+        required: true
+        schema:
+          type: string
+        description: Verification token from email
+    responses:
+      '200':
+        description: Email verified successfully
+
+

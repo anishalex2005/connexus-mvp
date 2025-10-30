@@ -1,0 +1,25 @@
+flowchart TB
+    subgraph "AI Agent Interaction Flow"
+        Start[Call Connected] --> Audio[Audio Stream]
+        Audio --> STT[Speech to Text<br/>Real-time]
+        STT --> Intent[Intent Detection]
+        Intent --> Decision{Routing Decision}
+        
+        Decision -->|FAQ| FAQ[Match FAQ Response]
+        Decision -->|Transfer| Transfer[Initiate Transfer]
+        Decision -->|Complex| AI[Send to Retell AI]
+        
+        FAQ --> Response[Generate Response]
+        AI --> Response
+        Transfer --> TransferFlow[Transfer Sequence]
+        
+        Response --> TTS[Text to Speech]
+        TTS --> Caller[Play to Caller]
+        
+        TransferFlow --> Dept{Department?}
+        Dept -->|Sales| Sales[Sales Queue]
+        Dept -->|Support| Support[Support Queue]
+        Dept -->|VIP| VIP[VIP Agent]
+    end
+
+
