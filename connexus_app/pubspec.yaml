@@ -43,10 +43,6 @@ dependencies:
   # Permissions
   permission_handler: ^11.1.0
   
-  # Device Info
-  device_info_plus: ^9.1.1
-  package_info_plus: ^5.0.1
-
   # Functional Programming
   dartz: ^0.10.1
 
