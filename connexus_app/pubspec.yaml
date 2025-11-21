@@ -25,7 +25,6 @@ dependencies:
   # Network
   dio: ^5.4.0
   dio_smart_retry: ^6.0.0
-  connectivity_plus: ^5.0.2
   
   # Local Storage
   shared_preferences: ^2.2.2
