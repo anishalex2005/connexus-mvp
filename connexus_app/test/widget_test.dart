@@ -7,9 +7,13 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:connexus_app/app.dart';
+import 'package:connexus_app/core/config/app_config.dart';
 
 void main() {
   testWidgets('ConnexUSApp builds', (WidgetTester tester) async {
+    // Initialize configuration for tests (development environment)
+    await AppConfig.initialize(Environment.development);
+
     await tester.pumpWidget(const ConnexUSApp());
     expect(find.byType(ConnexUSApp), findsOneWidget);
   });
