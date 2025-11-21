@@ -340,7 +340,7 @@ Use this section to track Task 7 progress and outputs.
 Use this section to track Task 8 progress and outputs.
 
 ## Task 8 Deliverables
- 
+
 - [x] Choose cloud provider and model (GCP, single project for MVP)
   - [ ] Project created (e.g., `connexus-mvp`) and set active
   - [ ] Billing account linked to project
@@ -363,15 +363,15 @@ Use this section to track Task 8 progress and outputs.
   - [x] `.gitignore` includes cloud credentials/Terraform ignores; `config/cloud-config.json` ignored
   - [x] `config/cloud-config.gcp.example.json` added (copy to `config/cloud-config.json`, ignored)
   - [x] `.github/workflows/ci.yml` updated to authenticate to GCP via Workload Identity Federation
- 
+
 ## Files Created/Modified (Task 8)
- 
+
 - Created
   - `config/cloud-config.gcp.example.json`
 - Modified
   - `.github/workflows/ci.yml` (added GCP auth via WIF)
   - `.gitignore` already contains ignores for local cloud configs
- 
+
 ## How to Complete the Manual Steps (GCP)
  
 1) Create project and link billing
@@ -407,16 +407,16 @@ Use this section to track Task 8 progress and outputs.
  
 7) CI verification
 - Push a branch/PR and confirm `.github/workflows/ci.yml` shows “Authenticate to Google Cloud” succeeded
- 
+
 ## Verification (Post-Setup)
- 
+
 - [ ] Local: `gcloud auth list` and `gcloud config list` show correct account/project
 - [ ] Storage: `gcloud storage buckets list` shows `connexus-terraform-state`
 - [ ] Budget visible in Cloud Billing and alert recipient added
 - [ ] CI run shows successful “Authenticate to Google Cloud” step
- 
+
 ## Notes
- 
+
 - `config/cloud-config.json` is intentionally ignored; copy from `config/cloud-config.gcp.example.json` and fill values.
 - Store any secrets in GitHub Secrets or GCP Secret Manager (not in repo).
 - For containers later, enable Artifact Registry and grant minimal writer role to the CI SA.

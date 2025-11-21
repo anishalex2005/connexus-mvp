@@ -15,15 +15,14 @@ env:
   FLUTTER_VERSION: '3.16.0'
   JAVA_VERSION: '11'
 
-defaults:
-  run:
-    working-directory: connexus_app
-
 jobs:
   analyze:
     name: Analyze Code
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: connexus_app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -77,6 +76,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: analyze
+    defaults:
+      run:
+        working-directory: connexus_app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -132,6 +134,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [analyze, test]
+    defaults:
+      run:
+        working-directory: connexus_app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -209,6 +214,9 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     needs: [analyze, test]
+    defaults:
+      run:
+        working-directory: connexus_app
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -275,8 +283,15 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs: [analyze, test, build-android, build-ios]
+    defaults:
+      run:
+        working-directory: .
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Check build status
+        working-directory: .
         run: |
           echo "## Build Summary for ConnexUS"
           echo "Analyze: ${{ needs.analyze.result }}"
