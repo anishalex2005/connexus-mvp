@@ -1,0 +1,23 @@
+{
+  "provider": "aws",
+  "region": "us-east-1",
+  "account_id": "REPLACE_WITH_ACCOUNT_ID",
+  "deployment_user": "connexus-ci-deployment",
+  "s3_state_bucket": "connexus-terraform-state",
+  "environments": {
+    "development": {
+      "region": "us-east-1",
+      "vpc_cidr": "10.0.0.0/16"
+    },
+    "staging": {
+      "region": "us-east-1",
+      "vpc_cidr": "10.1.0.0/16"
+    },
+    "production": {
+      "region": "us-east-1",
+      "vpc_cidr": "10.2.0.0/16"
+    }
+  },
+  "_note": "Copy this file to config/cloud-config.json and fill in real values. Do NOT commit config/cloud-config.json."
+}
+

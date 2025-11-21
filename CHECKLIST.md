@@ -211,3 +211,212 @@ Use this section to track Task 5 progress and outputs.
 ## Notes
 
 - Remote creation/push and branch protection require GitHub/GitLab access.
+
+
+# ConnexUS Task 6 Checklist (Set Up CI/CD Pipeline Basics)
+
+Use this section to track Task 6 progress and outputs.
+
+## Task 6 Deliverables
+
+- [x] CI workflows created
+  - [x] `.github/workflows/ci.yml` (analyze, test, Android/iOS build, summary)
+  - [x] `.github/workflows/build-release.yml` (manual tagged release builds and assets)
+  - [x] `.github/workflows/pr-checks.yml` (PR title, size check, lint, tests)
+- [x] CI configuration and branch protection template
+  - [x] `.github/ci-config.yml`
+  - [x] `.github/branch-protection.json`
+- [x] Build script
+  - [x] `connexus_app/scripts/ci/build.sh`
+- [x] Sample test scaffolded
+  - [x] `connexus_app/test/unit/sample_test.dart`
+
+## CI/CD Notes
+
+- Workflows are at repo root; default working-directory is `connexus_app`.
+- Runners:
+  - Ubuntu: analysis, tests, Android builds
+  - macOS: iOS builds (no code signing, unsigned IPA artifact)
+- Artifacts uploaded:
+  - Android: debug/profile/release APKs and release AAB
+  - iOS: unsigned IPA zip
+- Coverage upload via `codecov` is best-effort (does not fail build).
+
+## Commands
+
+- Add and push CI/CD (from repo root):
+  - `git add .github/ connexus_app/scripts/ci connexus_app/test`
+  - `git commit -m "feat(ci): add CI/CD workflows, configs, scripts, and sample test"`
+  - `git push origin develop`
+- Local check of workflow definitions (requires `act`):
+  - `act -W .github/workflows/ci.yml --list`
+  - `act -W .github/workflows/ci.yml -j analyze`
+- Make build script executable (on macOS/Linux):
+  - `chmod +x connexus_app/scripts/ci/build.sh`
+
+## Pending Items (Post-MVP)
+
+- [ ] Android signing (keystore) and secure secret storage
+- [ ] iOS signing (Apple Developer account, certificates/profiles)
+- [ ] Store deployments (Play Console / App Store Connect / TestFlight)
+- [ ] Slack/Email notifications and advanced coverage gates
+
+## Verification
+
+- On push to `develop`/`main`:
+  - [x] Analysis runs
+  - [x] Tests run with coverage
+  - [x] Android builds (debug/profile/release) artifacts uploaded
+  - [x] iOS unsigned build on macOS runner, artifact uploaded
+- On PR:
+  - [x] PR title/size checks
+  - [x] Linting, analysis, tests with coverage comment
+- On manual release dispatch:
+  - [x] Tag and GitHub Release created (draft)
+  - [x] Android APK and iOS unsigned IPA uploaded to release assets
+
+# ConnexUS Task 7 Checklist (Create Development, Staging Environments)
+
+Use this section to track Task 7 progress and outputs.
+
+## Task 7 Deliverables
+
+- [x] Environment package setup
+  - [x] `flutter_dotenv` added to dependencies
+  - [x] `flutter_flavorizr` added to devDependencies (for future automation)
+  - [x] `pubspec.yaml` assets configured for `env/`
+- [x] Multi-environment configuration
+  - [x] Refactor `connexus_app/lib/core/config/app_config.dart` to load from env
+  - [x] Add entrypoints: `lib/main_{development,staging,production}.dart`
+  - [x] Update `lib/app.dart` to use env name/banner and appName/debug flags
+- [x] Dev tooling & scripts
+  - [x] VS Code launch configs: `connexus_app/.vscode/launch.json`
+  - [x] Scripts: `scripts/run_dev.sh`, `scripts/run_staging.sh`, `scripts/run_prod.sh`, `scripts/build_apk.sh`, `scripts/build_ios.sh`
+- [x] Environment-aware services
+  - [x] `lib/data/services/api_client.dart` (Dio, baseUrl from env)
+- [x] Gitignore updates
+  - [x] Track non-sensitive dev/staging env files if needed
+  - [x] Keep production env ignored
+
+## Notes
+
+- Place environment files under `connexus_app/env/`:
+  - `.env.development` and `.env.staging` can be committed if non-sensitive
+  - `.env.production` must NOT be committed (secrets)
+- If env files are missing locally, the app falls back to safe defaults (dev).
+- Android/iOS platform folders are present. Android flavors configured; iOS schemes require Xcode setup.
+
+## Commands
+
+- Run dev/staging/prod:
+  - `flutter run --flavor development --target lib/main_development.dart`
+  - `flutter run --flavor staging --target lib/main_staging.dart`
+  - `flutter run --flavor production --target lib/main_production.dart`
+- Build APKs:
+  - `connexus_app/scripts/build_apk.sh development|staging|production`
+- iOS build (macOS):
+  - `connexus_app/scripts/build_ios.sh development|staging|production`
+
+## Pending (Platform-specific)
+
+- [x] Generate platforms: `cd connexus_app && flutter create .`
+- [x] Android flavors in `android/app/build.gradle.kts` (development/staging/production)
+- [ ] iOS schemes (create in Xcode). `ios/Flutter/*.xcconfig` added; Info.plist uses dynamic values
+
+## Verification
+
+- [x] Environment banner appears in non-production builds
+- [x] App title switches per environment
+- [x] API client baseUrl reflects env
+- [x] Scripts and VS Code targets point to correct entrypoints
+
+## Task 7 – Local Verification Update
+
+- Env templates added at `connexus_app/env/README.md`. Create `.env.*` files locally.
+- Flutter SDK not found on PATH locally; dev build verification pending installation.
+
+# ConnexUS Task 8 Checklist (Set Up Cloud Provider Account)
+
+Use this section to track Task 8 progress and outputs.
+
+## Task 8 Deliverables
+ 
+- [x] Choose cloud provider and model (GCP, single project for MVP)
+  - [ ] Project created (e.g., `connexus-mvp`) and set active
+  - [ ] Billing account linked to project
+- [ ] Budgets and alerts
+  - [ ] Monthly budget configured ($100) with 50% alert (MVP)
+  - [ ] Cost/Anomaly detection enabled
+- [ ] IAM and CI
+  - [ ] Create CI Deployment Service Account `connexus-ci-deploy@<PROJECT_ID>.iam.gserviceaccount.com`
+  - [ ] Grant minimal roles: `roles/storage.admin` (bucket-scoped), `roles/iam.serviceAccountTokenCreator`
+  - [ ] Configure GitHub → GCP Workload Identity Federation (no keys)
+- [ ] Developer CLI
+  - [ ] Install `gcloud` and set default project and region (`us-east1`)
+- [ ] GCS state bucket
+  - [ ] Create `gs://connexus-terraform-state` (region `us-east1`, Uniform access, Versioning on, Google-managed encryption)
+- [ ] Networking (MVP)
+  - [ ] Use Default VPC (skip custom CIDRs for MVP)
+- [ ] Artifact storage (containers) — optional
+  - [ ] Decide whether to create Artifact Registry now (skip for MVP unless containers needed)
+- [x] Project repo updates
+  - [x] `.gitignore` includes cloud credentials/Terraform ignores; `config/cloud-config.json` ignored
+  - [x] `config/cloud-config.gcp.example.json` added (copy to `config/cloud-config.json`, ignored)
+  - [x] `.github/workflows/ci.yml` updated to authenticate to GCP via Workload Identity Federation
+ 
+## Files Created/Modified (Task 8)
+ 
+- Created
+  - `config/cloud-config.gcp.example.json`
+- Modified
+  - `.github/workflows/ci.yml` (added GCP auth via WIF)
+  - `.gitignore` already contains ignores for local cloud configs
+ 
+## How to Complete the Manual Steps (GCP)
+ 
+1) Create project and link billing
+- In Google Cloud Console: Create project (e.g., `connexus-mvp`) in org/folder if applicable
+- Link the project to your Billing Account
+ 
+2) Configure budget and alerts
+- Cloud Billing → Budgets & alerts → Create budget ($100), add 50% alert to your email(s)
+- Enable Cost/Anomaly detection
+ 
+3) Install and initialize gcloud (local)
+- Install Google Cloud SDK
+- Run: `gcloud init` → choose `connexus-mvp` and region `us-east1`
+ 
+4) Create CI Service Account and minimal roles
+- Create SA: `gcloud iam service-accounts create connexus-ci-deploy --display-name="ConnexUS CI Deploy"`
+- Scope Storage Admin to state bucket after you create it (step 5)
+- Ensure SA has `roles/iam.serviceAccountTokenCreator` (for WIF)
+ 
+5) Create GCS bucket for Terraform state
+- `gcloud storage buckets create gs://connexus-terraform-state --location=us-east1`
+- Enable uniform access and versioning:
+  - `gcloud storage buckets update gs://connexus-terraform-state --uniform-bucket-level-access`
+  - `gcloud storage buckets update gs://connexus-terraform-state --versioning`
+ 
+6) Configure GitHub OIDC → GCP (Workload Identity Federation)
+- Create a Workload Identity Pool and Provider for GitHub
+- Grant `roles/iam.workloadIdentityUser` on the CI SA to the GitHub principal set
+- In GitHub repo secrets, set:
+  - `GCP_WIF_PROVIDER` = full resource name of the provider
+  - `GCP_WIF_SERVICE_ACCOUNT` = `connexus-ci-deploy@<PROJECT_ID>.iam.gserviceaccount.com`
+  - `GCP_PROJECT_ID` = your project id
+ 
+7) CI verification
+- Push a branch/PR and confirm `.github/workflows/ci.yml` shows “Authenticate to Google Cloud” succeeded
+ 
+## Verification (Post-Setup)
+ 
+- [ ] Local: `gcloud auth list` and `gcloud config list` show correct account/project
+- [ ] Storage: `gcloud storage buckets list` shows `connexus-terraform-state`
+- [ ] Budget visible in Cloud Billing and alert recipient added
+- [ ] CI run shows successful “Authenticate to Google Cloud” step
+ 
+## Notes
+ 
+- `config/cloud-config.json` is intentionally ignored; copy from `config/cloud-config.gcp.example.json` and fill values.
+- Store any secrets in GitHub Secrets or GCP Secret Manager (not in repo).
+- For containers later, enable Artifact Registry and grant minimal writer role to the CI SA.

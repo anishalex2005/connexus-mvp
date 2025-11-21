@@ -1,0 +1,7 @@
+#include "Generated.xcconfig"
+
+PRODUCT_NAME = ConnexUS
+PRODUCT_BUNDLE_IDENTIFIER = com.connexus.app
+FLUTTER_TARGET = lib/main_production.dart
+
+

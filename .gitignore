@@ -89,6 +89,10 @@ desktop.ini
 .env.production
 *.env
 
+# Allow commiting non-sensitive environment examples within Flutter app
+!connexus_app/env/.env.development
+!connexus_app/env/.env.staging
+
 # Coverage
 coverage/
 *.lcov
@@ -129,4 +133,22 @@ GoogleService-Info.plist
 !**/ios/Flutter/Debug.xcconfig
 !**/ios/Flutter/Release.xcconfig
 
+
+# AWS
+.aws/
+*.pem
+aws-credentials.txt
+
+# Cloud credentials
+credentials/
+*-credentials.json
+*.key
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Cloud config (local only)
+config/cloud-config.json
 

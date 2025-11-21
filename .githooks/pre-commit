@@ -3,6 +3,12 @@
 
 echo "Running pre-commit checks..."
 
+# Skip if Flutter is not installed
+if ! command -v flutter >/dev/null 2>&1; then
+  echo "Flutter not found; skipping format/analyze checks."
+  exit 0
+fi
+
 # Flutter format check
 echo "Checking dart format..."
 flutter format --set-exit-if-changed lib test

@@ -1,0 +1,160 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        type: string
+      build_number:
+        description: 'Build number'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes'
+        required: false
+        type: string
+
+env:
+  FLUTTER_VERSION: '3.16.0'
+
+defaults:
+  run:
+    working-directory: connexus_app
+
+jobs:
+  create-release:
+    name: Create Release Build
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release Tag
+        id: create_tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"
+          git push origin v${{ github.event.inputs.version }}
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: ConnexUS v${{ github.event.inputs.version }}
+          body: |
+            ## Release Notes
+            ${{ github.event.inputs.release_notes }}
+            
+            ## Downloads
+            - Android APK: See assets below
+            - iOS IPA: See assets below (unsigned)
+            
+            ## Installation
+            ### Android
+            1. Download the APK file
+            2. Enable "Unknown Sources" in Settings
+            3. Install the APK
+            
+            ### iOS
+            1. IPA requires code signing for distribution
+            2. Use TestFlight for beta testing
+          draft: true
+          prerelease: false
+
+  build-android-release:
+    name: Build Android Release
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Update version in pubspec.yaml
+        run: |
+          sed -i "s/version: .*/version: ${{ github.event.inputs.version }}+${{ github.event.inputs.build_number }}/" pubspec.yaml
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release --build-number=${{ github.event.inputs.build_number }}
+
+      - name: Upload Release APK to GitHub Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: connexus_app/build/app/outputs/flutter-apk/app-release.apk
+          asset_name: connexus-v${{ github.event.inputs.version }}-android.apk
+          asset_content_type: application/vnd.android.package-archive
+
+  build-ios-release:
+    name: Build iOS Release
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Update version in pubspec.yaml
+        run: |
+          sed -i '' "s/version: .*/version: ${{ github.event.inputs.version }}+${{ github.event.inputs.build_number }}/" pubspec.yaml
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build iOS Release
+        run: |
+          cd ios
+          pod install
+          cd ..
+          flutter build ios --release --no-codesign --build-number=${{ github.event.inputs.build_number }}
+
+      - name: Create unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r connexus-v${{ github.event.inputs.version }}-ios-unsigned.ipa Payload
+
+      - name: Upload iOS IPA to GitHub Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: connexus_app/connexus-v${{ github.event.inputs.version }}-ios-unsigned.ipa
+          asset_name: connexus-v${{ github.event.inputs.version }}-ios-unsigned.ipa
+          asset_content_type: application/octet-stream
+
+

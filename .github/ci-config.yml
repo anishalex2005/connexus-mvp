@@ -1,0 +1,67 @@
+# CI/CD Configuration for ConnexUS
+app_name: ConnexUS
+flutter_version: '3.16.0'
+java_version: '11'
+xcode_version: 'latest-stable'
+
+# Build configurations
+build:
+  android:
+    enabled: true
+    build_types:
+      - debug
+      - profile
+      - release
+    outputs:
+      - apk
+      - appbundle
+  ios:
+    enabled: true
+    build_types:
+      - debug
+      - profile
+      - release
+    code_signing: false  # Will be enabled when certificates are available
+
+# Test configurations
+tests:
+  unit_tests: true
+  widget_tests: true
+  integration_tests: false  # Will be enabled in Task 93
+  coverage_threshold: 60
+
+# Code quality
+code_quality:
+  formatting: true
+  analysis: true
+  dependency_check: true
+
+# Artifact retention (days)
+artifacts:
+  debug: 7
+  profile: 14
+  release: 30
+  reports: 30
+
+# Notifications
+notifications:
+  slack:
+    enabled: false
+    webhook_url: ""  # To be configured
+  email:
+    enabled: false
+    recipients: []
+
+# Deployment targets (for future use)
+deployment:
+  android:
+    google_play:
+      enabled: false
+      track: internal
+  ios:
+    app_store:
+      enabled: false
+    testflight:
+      enabled: false
+
+

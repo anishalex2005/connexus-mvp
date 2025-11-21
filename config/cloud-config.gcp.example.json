@@ -1,0 +1,18 @@
+{
+  "provider": "gcp",
+  "project_id": "REPLACE_WITH_PROJECT_ID",
+  "billing_account_id": "REPLACE_WITH_BILLING_ACCOUNT_ID",
+  "region": "us-east1",
+  "deployment_service_account": "connexus-ci-deploy@REPLACE_WITH_PROJECT_ID.iam.gserviceaccount.com",
+  "gcs_state_bucket": "connexus-terraform-state",
+  "environments": {
+    "development": { "region": "us-east1", "vpc_cidr": "10.0.0.0/16" },
+    "staging": { "region": "us-east1", "vpc_cidr": "10.1.0.0/16" },
+    "production": { "region": "us-east1", "vpc_cidr": "10.2.0.0/16" }
+  },
+  "_note": "Copy this file to config/cloud-config.json and fill in real values. Do NOT commit config/cloud-config.json."
+}
+
+
+
+

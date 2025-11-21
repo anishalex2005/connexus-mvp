@@ -1,0 +1,7 @@
+#include "Generated.xcconfig"
+
+PRODUCT_NAME = ConnexUS Staging
+PRODUCT_BUNDLE_IDENTIFIER = com.connexus.app.staging
+FLUTTER_TARGET = lib/main_staging.dart
+
+

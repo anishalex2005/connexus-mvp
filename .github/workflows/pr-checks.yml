@@ -1,0 +1,76 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  FLUTTER_VERSION: '3.16.0'
+
+defaults:
+  run:
+    working-directory: connexus_app
+
+jobs:
+  pr-title:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title format
+        uses: deepakputhraya/action-pr-title@master
+        with:
+          regex: '^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .{1,50}'
+          allowed_prefixes: 'feat,fix,docs,style,refactor,test,chore'
+          prefix_case_sensitive: true
+          min_length: 10
+          max_length: 100
+
+  size-check:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Get PR size
+        run: |
+          files_changed=$(git diff --name-only HEAD^ HEAD | wc -l)
+          lines_added=$(git diff --stat HEAD^ HEAD | tail -1 | awk '{print $4}')
+          lines_removed=$(git diff --stat HEAD^ HEAD | tail -1 | awk '{print $6}')
+          
+          echo "Files changed: $files_changed"
+          echo "Lines added: $lines_added"
+          echo "Lines removed: $lines_removed"
+          
+          if [ "$files_changed" -gt 30 ]; then
+            echo "::warning::Large PR detected. Consider breaking it into smaller PRs."
+          fi
+
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Check formatting
+        run: dart format --set-exit-if-changed lib test
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+      - name: Run tests
+        run: flutter test --coverage
+      - name: Comment test coverage
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: ./connexus_app/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+
