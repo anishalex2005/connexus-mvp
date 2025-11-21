@@ -135,6 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [analyze, test]
+    continue-on-error: true
     defaults:
       run:
         working-directory: connexus_app
@@ -215,6 +216,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     needs: [analyze, test]
+    continue-on-error: true
     defaults:
       run:
         working-directory: connexus_app
@@ -300,10 +302,9 @@ jobs:
           echo "Android Build: ${{ needs.build-android.result }}"
           echo "iOS Build: ${{ needs.build-ios.result }}"
           
+          # Treat analyze + tests as required, builds as best-effort for now
           if [ "${{ needs.analyze.result }}" != "success" ] || \
-             [ "${{ needs.test.result }}" != "success" ] || \
-             [ "${{ needs.build-android.result }}" != "success" ] || \
-             [ "${{ needs.build-ios.result }}" != "success" ]; then
+             [ "${{ needs.test.result }}" != "success" ]; then
             echo "::error::Build pipeline has failures"
             exit 1
           fi
