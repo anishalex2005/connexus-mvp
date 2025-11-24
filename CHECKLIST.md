@@ -342,21 +342,21 @@ Use this section to track Task 8 progress and outputs.
 ## Task 8 Deliverables
 
 - [x] Choose cloud provider and model (GCP, single project for MVP)
-  - [ ] Project created (e.g., `connexus-mvp`) and set active
-  - [ ] Billing account linked to project
+  - [x] Project created (e.g., `connexus-mvp`) and set active
+  - [x] Billing account linked to project
 - [ ] Budgets and alerts
   - [ ] Monthly budget configured ($100) with 50% alert (MVP)
   - [ ] Cost/Anomaly detection enabled
-- [ ] IAM and CI
-  - [ ] Create CI Deployment Service Account `connexus-ci-deploy@<PROJECT_ID>.iam.gserviceaccount.com`
-  - [ ] Grant minimal roles: `roles/storage.admin` (bucket-scoped), `roles/iam.serviceAccountTokenCreator`
-  - [ ] Configure GitHub → GCP Workload Identity Federation (no keys)
-- [ ] Developer CLI
-  - [ ] Install `gcloud` and set default project and region (`us-east1`)
-- [ ] GCS state bucket
-  - [ ] Create `gs://connexus-terraform-state` (region `us-east1`, Uniform access, Versioning on, Google-managed encryption)
-- [ ] Networking (MVP)
-  - [ ] Use Default VPC (skip custom CIDRs for MVP)
+- [x] IAM and CI
+  - [x] Create CI Deployment Service Account `connexus-ci-deploy@<PROJECT_ID>.iam.gserviceaccount.com`
+  - [x] Grant minimal roles: `roles/storage.admin` (bucket-scoped), `roles/iam.serviceAccountTokenCreator`
+  - [x] Configure GitHub → GCP Workload Identity Federation (no keys)
+- [x] Developer CLI
+  - [x] Install `gcloud` and set default project and region (`us-east1`)
+- [x] GCS state bucket
+  - [x] Create `gs://connexus-terraform-state` (region `us-east1`, Uniform access, Versioning on, Google-managed encryption)
+- [x] Networking (MVP)
+  - [x] Use Default VPC (skip custom CIDRs for MVP)
 - [ ] Artifact storage (containers) — optional
   - [ ] Decide whether to create Artifact Registry now (skip for MVP unless containers needed)
 - [x] Project repo updates
@@ -410,13 +410,116 @@ Use this section to track Task 8 progress and outputs.
 
 ## Verification (Post-Setup)
 
-- [ ] Local: `gcloud auth list` and `gcloud config list` show correct account/project
-- [ ] Storage: `gcloud storage buckets list` shows `connexus-terraform-state`
+- [x] Local: `gcloud auth list` and `gcloud config list` show correct account/project
+- [x] Storage: `gcloud storage buckets list` shows `connexus-terraform-state`
 - [ ] Budget visible in Cloud Billing and alert recipient added
-- [ ] CI run shows successful “Authenticate to Google Cloud” step
+- [x] CI run shows successful “Authenticate to Google Cloud” step
 
 ## Notes
 
 - `config/cloud-config.json` is intentionally ignored; copy from `config/cloud-config.gcp.example.json` and fill values.
 - Store any secrets in GitHub Secrets or GCP Secret Manager (not in repo).
 - For containers later, enable Artifact Registry and grant minimal writer role to the CI SA.
+- Android/iOS Flutter builds are currently blocked by the legacy Android embedding warning; CI treats them as best-effort so Analyze + Tests still gate changes. Plan a separate Android embedding migration task to turn builds back into required checks.
+
+# ConnexUS Task 9 Checklist (Configure Basic Backend API Server)
+
+Use this section to track Task 9 progress and outputs.
+
+## Task 9 Deliverables
+
+- [x] Backend project scaffold created
+  - [x] `backend/package.json` with scripts and engines
+  - [x] `backend/tsconfig.json` (TypeScript config)
+  - [x] `backend/nodemon.json` (dev runner)
+  - [x] `backend/.eslintrc.json` and `backend/.prettierrc`
+  - [x] `backend/jest.config.js`
+- [x] Environment templates
+  - [x] `backend/env.example` (copy to `backend/.env` locally)
+- [x] Core server implementation (Express + TypeScript)
+  - [x] `backend/src/server.ts`
+  - [x] `backend/src/app.ts`
+  - [x] `backend/src/config/index.ts` (config loader)
+  - [x] `backend/src/config/logger.ts` (Winston logger)
+  - [x] `backend/src/middleware/error.middleware.ts`
+  - [x] `backend/src/middleware/validation.middleware.ts`
+- [x] Routes and placeholders aligned to API spec
+  - [x] `backend/src/routes/index.ts`
+  - [x] `backend/src/routes/auth.routes.ts`
+  - [x] `backend/src/routes/user.routes.ts`
+  - [x] `backend/src/routes/call.routes.ts`
+  - [x] `backend/src/routes/ai.routes.ts`
+  - [x] `backend/src/routes/sms.routes.ts`
+  - [x] `backend/src/routes/analytics.routes.ts`
+- [x] Types and utilities
+  - [x] `backend/src/types/index.d.ts`
+  - [x] `backend/src/utils/constants.ts`
+- [x] Tests
+  - [x] `backend/src/__tests__/integration/health.test.ts`
+
+## How to Install and Run (Local)
+
+1) Prereqs
+- Node.js v18+ and npm v9+ installed:
+  - `node --version`
+  - `npm --version`
+
+2) Configure environment
+- Copy `backend/env.example` → `backend/.env` and adjust values
+  - For dev: keep defaults; set `CORS_ORIGIN` to your local UIs as needed
+
+3) Install dependencies
+- From repo root:
+  - PowerShell:
+    - `cd backend`
+    - Install runtime deps:
+      - `npm install express cors helmet morgan compression dotenv`
+      - `npm install express-rate-limit express-validator`
+      - `npm install winston`
+    - Install dev deps:
+      - `npm install -D typescript ts-node nodemon eslint prettier`
+      - `npm install -D @types/node @types/express @types/cors @types/morgan @types/compression`
+      - `npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin`
+      - `npm install -D jest ts-jest @types/jest supertest @types/supertest`
+
+4) Start the server (dev)
+- `npm run dev`
+- Expected logs include:
+  - `🚀 Server is running on port 3000`
+  - `📚 API Documentation: http://localhost:3000/api/v1/docs`
+  - `🏥 Health Check: http://localhost:3000/health`
+
+5) Run tests
+- `npm test`
+- With coverage: `npm run test -- --coverage`
+
+## Quick Verification (Local)
+
+- [ ] `GET http://localhost:3000/health` returns status `success`
+- [ ] `GET http://localhost:3000/api/v1/docs` returns endpoints list
+- [ ] `POST http://localhost:3000/api/v1/auth/login` returns placeholder response
+- [ ] Jest tests pass
+- [ ] Winston logs emit to console and `backend/logs/*` (on runtime)
+
+## Notes
+
+- Do not commit `backend/.env`. Use `backend/env.example` as a template.
+- Database connection will be added in Task 10 (files created later under `backend/src/config/database.ts` as needed).
+- Authentication middleware will be added in Task 11; WebSocket server in Task 12.
+- Route handlers currently return placeholders pending subsequent tasks.
+
+## Git Commands (suggested)
+
+- Stage and commit:
+  - `git add backend CHECKLIST.md`
+  - `git commit -m "feat(backend): implement basic API server structure (Task 9)"`
+
+## Status
+
+- [x] Basic Express server configured with TypeScript
+- [x] Middleware stack implemented (security, logging, error handling)
+- [x] Route structure defined with placeholder endpoints
+- [x] Environment configuration system in place (template provided)
+- [x] Testing framework configured (Jest + Supertest)
+- [x] Development workflow with hot reload (Nodemon + ts-node)
+- [x] Error handling and logging system (centralized + Winston)
