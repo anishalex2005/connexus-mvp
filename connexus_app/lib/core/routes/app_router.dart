@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
+import '../../presentation/screens/login/login_screen.dart';
+import '../../presentation/screens/home/home_screen.dart';
 
 /// Application routing configuration
 class AppRouter {
@@ -22,6 +24,14 @@ class AppRouter {
       case splash:
         return MaterialPageRoute(
           builder: (_) => const SplashScreen(),
+        );
+      case login:
+        return MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
+        );
+      case home:
+        return MaterialPageRoute(
+          builder: (_) => const HomeScreen(),
         );
       default:
         return MaterialPageRoute(

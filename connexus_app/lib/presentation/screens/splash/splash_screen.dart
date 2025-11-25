@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../base_screen.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/routes/app_router.dart';
 
 class SplashScreen extends BaseScreen {
   const SplashScreen({Key? key}) : super(key: key);
@@ -28,10 +29,10 @@ class _SplashScreenState extends BaseScreenState<SplashScreen> {
     // Simulate initialization delay
     await Future.delayed(const Duration(seconds: 2));
     
-    // Navigate to appropriate screen (placeholder)
+    // Navigate to appropriate screen (placeholder -> login for now)
     if (mounted) {
       Logger.info('App initialized successfully');
-      // AppRouter.navigateAndReplace(context, AppRouter.login);
+      AppRouter.navigateAndReplace(context, AppRouter.login);
     }
   }
   

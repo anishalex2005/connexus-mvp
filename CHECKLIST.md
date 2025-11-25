@@ -495,11 +495,11 @@ Use this section to track Task 9 progress and outputs.
 
 ## Quick Verification (Local)
 
-- [ ] `GET http://localhost:3000/health` returns status `success`
-- [ ] `GET http://localhost:3000/api/v1/docs` returns endpoints list
-- [ ] `POST http://localhost:3000/api/v1/auth/login` returns placeholder response
-- [ ] Jest tests pass
-- [ ] Winston logs emit to console and `backend/logs/*` (on runtime)
+- [x] `GET http://localhost:3000/health` returns status `success`
+- [x] `GET http://localhost:3000/api/v1/docs` returns endpoints list
+- [x] `POST http://localhost:3000/api/v1/auth/login` returns placeholder response
+- [x] Jest tests pass
+- [x] Winston logs emit to console and `backend/logs/*` (on runtime)
 
 ## Notes
 
