@@ -523,3 +523,271 @@ Use this section to track Task 9 progress and outputs.
 - [x] Testing framework configured (Jest + Supertest)
 - [x] Development workflow with hot reload (Nodemon + ts-node)
 - [x] Error handling and logging system (centralized + Winston)
+
+# ConnexUS Task 10 Checklist (Set Up Database)
+
+Use this section to track Task 10 progress and outputs.
+
+## Task 10 Deliverables
+
+- [x] Database configuration and tooling
+  - [x] PostgreSQL connection settings in `backend/env.example` (DB_* variables, DATABASE_URL, pool config)
+  - [x] Knex configuration file `backend/knexfile.ts` for development/staging/production
+  - [x] NPM scripts for database operations in `backend/package.json` (`db:migrate`, `db:rollback`, `db:seed`, `db:status`, etc.)
+- [x] Database connection module and types
+  - [x] `backend/src/database/index.ts` (Knex instance, health check, pool stats, graceful shutdown)
+  - [x] `backend/src/database/types.ts` (TypeScript enums and interfaces for users, calls, SMS, AI config, etc.)
+- [x] Initial schema migrations
+  - [x] `backend/src/database/migrations/20251125000000_initial_schema.ts` (users, phone_numbers, ai_configurations, business_hours, call_records, sms_templates, sms_messages, faq_entries, blocked_numbers, refresh_tokens)
+- [x] Seed data for development
+  - [x] `backend/src/database/seeds/01_development_data.ts` (test user, phone numbers, AI config, business hours, SMS templates, FAQ entries, sample call records, blocked numbers)
+- [x] Repository layer (data access)
+  - [x] `backend/src/repositories/userRepository.ts`
+  - [x] `backend/src/repositories/callRecordRepository.ts`
+  - [x] `backend/src/repositories/index.ts`
+- [x] Express integration and test routes
+  - [x] Updated `backend/src/app.ts` with database-aware `/health` and `/db-stats` endpoints
+  - [x] Updated `backend/src/routes/index.ts` with API info root and `/test-db` endpoint (non-production only)
+  - [x] Updated `backend/src/server.ts` to check DB connection on startup and close pool on shutdown
+
+## How to Install and Run (Local, Database)
+
+1) Prereqs
+- PostgreSQL v14+ installed locally and running
+- Node.js v18+ and npm v9+ installed:
+  - `node --version`
+  - `npm --version`
+
+2) Configure database and environment
+- In PostgreSQL (psql as superuser), create user and database:
+  - `CREATE USER connexus_dev WITH PASSWORD 'connexus_dev_password';`
+  - `CREATE DATABASE connexus_development OWNER connexus_dev;`
+  - `GRANT ALL PRIVILEGES ON DATABASE connexus_development TO connexus_dev;`
+  - `\c connexus_development`
+  - `GRANT ALL ON SCHEMA public TO connexus_dev;`
+- Copy `backend/env.example` → `backend/.env` and keep the default DB_* values (or adjust as needed).
+
+3) Install dependencies (from repo root)
+- PowerShell:
+  - `cd backend`
+  - `npm install` (will install `pg`, `knex`, and tooling added in Task 10)
+
+4) Run migrations and seeds
+- From `backend`:
+  - `npm run db:migrate`      # runs latest migrations against connexus_development
+  - `npm run db:status`       # shows applied/pending migrations
+  - `npm run db:seed`         # inserts development test data
+
+## Verification (API + Database)
+
+- [ ] `npm run dev` starts the server with log output including:
+  - `🚀 Server is running on port 3000`
+  - `🏥 Health Check: http://localhost:3000/health`
+- [ ] `GET http://localhost:3000/health` returns JSON including:
+  - `status: "success"`
+  - `message: "ConnexUS API is running"`
+  - `environment`, `version`
+  - `database.connected: true` and `database.pool` stats
+- [ ] `GET http://localhost:3000/db-stats` (non-production) returns:
+  - `pool.used`, `pool.free`, `pool.pending`
+  - `tables.users`, `tables.phone_numbers`, `tables.call_records`, `tables.sms_templates`, `tables.ai_configurations`
+- [ ] `GET http://localhost:3000/api/v1/test-db` (non-production) returns:
+  - `"success": true`
+  - `"data.userCount" >= 1`
+  - `"data.testUserExists": true` and `"data.testUserEmail": "test@connexus.dev"`
+  - `"data.callStats.total" >= 0` (basic stats for recent calls)
+- [ ] In psql (`psql -h localhost -U connexus_dev -d connexus_development`):
+  - `\dt` shows the 12 tables (`users`, `phone_numbers`, `ai_configurations`, `business_hours`, `call_records`, `sms_templates`, `sms_messages`, `faq_entries`, `blocked_numbers`, `refresh_tokens`, `knex_migrations`, `knex_migrations_lock`)
+  - `SELECT email, first_name, status FROM users;` shows the seeded test user
+
+## Notes
+
+- Database configuration lives in `backend/env.example` / `backend/.env`; do not commit secrets.
+- CLI commands use Knex via TypeScript (`backend/knexfile.ts`) and `ts-node` wrappers in `backend/package.json`.
+- Seed password hashing uses SHA-256 for development only; production auth will use bcrypt in Task 11.
+
+# ConnexUS Task 11 Checklist (Implement Basic API Authentication)
+
+Use this section to track Task 11 progress and outputs.
+
+## Task 11 Deliverables
+
+- [x] Authentication configuration
+  - [x] `backend/src/config/auth.config.ts` (JWT access/refresh secrets and bcrypt rounds)
+  - [x] Environment variables added to `backend/env.example`:
+    - [x] `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
+    - [x] `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`
+    - [x] `BCRYPT_ROUNDS`
+- [x] Type definitions
+  - [x] `backend/src/types/auth.types.ts` (JWT payload, auth request types, auth responses)
+- [x] Authentication service
+  - [x] `backend/src/services/auth.service.ts` (password hashing, token generation/verification, validation helpers, UUID generation)
+- [x] Authentication middleware
+  - [x] `backend/src/middleware/auth.middleware.ts` (JWT authentication, optional auth, basic auth rate limiting)
+- [x] Authentication controller and routes
+  - [x] `backend/src/controllers/auth.controller.ts` (register, login, refresh, logout, current user)
+  - [x] `backend/src/routes/auth.routes.ts` (wired to `/api/v1/auth` via `backend/src/routes/index.ts`)
+- [x] User repository and database support
+  - [x] `backend/src/repositories/userRepository.ts` updated with `updatePassword`, `emailExists`, and `updateLastLogin`
+  - [x] `backend/src/database/migrations/20251125000000_initial_schema.ts` already includes `users.last_login_at` and `refresh_tokens` table
+- [x] Build and type-check
+  - [x] `npm run build` from `backend` completes without TypeScript errors
+
+## How to Install and Run (Auth)
+
+1) Configure environment
+- Copy `backend/env.example` → `backend/.env` and set:
+  - `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` to strong, unique values
+  - Optionally adjust `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`, and `BCRYPT_ROUNDS`
+
+2) Install dependencies
+- From repo root (PowerShell):
+  - `cd "C:\Users\anish\OneDrive\Desktop\ConnexUS AI App\backend"`
+  - `npm install`
+
+3) Start the server (dev)
+- `npm run dev`
+- Expected logs include:
+  - `🚀 Server is running on port 3000`
+  - `🏥 Health Check: http://localhost:3000/health`
+  - `📚 API Documentation: http://localhost:3000/api/v1/docs`
+
+## Verification (Auth Endpoints)
+
+- [ ] `POST http://localhost:3000/api/v1/auth/register`
+  - Request body: `{ "email", "password", "firstName", "lastName" }`
+  - Strong password required (length 8+, upper/lowercase, number, special char)
+  - Response includes `success: true`, user object, and `tokens.accessToken` / `tokens.refreshToken`
+- [ ] `POST http://localhost:3000/api/v1/auth/login`
+  - Valid credentials return `success: true` and token pair
+  - Invalid credentials return `success: false` and `message: "Invalid email or password"`
+- [ ] `GET http://localhost:3000/api/v1/auth/me`
+  - With `Authorization: Bearer <accessToken>` returns current user profile
+  - Without/invalid token returns `401` and `success: false`
+- [ ] `POST http://localhost:3000/api/v1/auth/refresh`
+  - With valid `refreshToken` in body returns new access/refresh token pair
+- [ ] `POST http://localhost:3000/api/v1/auth/logout`
+  - Returns `success: true` and logout message (client should discard tokens)
+
+## Notes
+
+- Rate limiting for auth endpoints is implemented in-memory (`rateLimitAuth`) for MVP; consider `express-rate-limit` or a shared store in production.
+- Passwords are hashed with bcrypt via `auth.service.ts`; the SHA-256 hashes in development seeds remain only for initial data and are superseded by Task 11 for real user accounts.
+
+# ConnexUS Task 12 Checklist (Set Up WebSocket Server for Real-time Communication)
+
+Use this section to track Task 12 progress and outputs.
+
+## Task 12 Deliverables
+
+- [x] WebSocket dependencies and configuration
+  - [x] Added Socket.IO and Redis adapter dependencies in `backend/package.json`:
+    - [x] `socket.io`
+    - [x] `@socket.io/redis-adapter`
+    - [x] `redis`
+    - [x] `socket.io-client` (for local test client)
+  - [x] Updated `backend/env.example` with WebSocket-related environment variables:
+    - [x] `WS_CORS_ORIGIN`
+    - [x] `WS_PING_INTERVAL`
+    - [x] `WS_PING_TIMEOUT`
+    - [x] `REDIS_URL` (optional, for horizontal scaling)
+- [x] WebSocket types and core interfaces
+  - [x] `backend/src/websocket/types/socket.types.ts` (client/server events, room types, connection data, errors)
+- [x] WebSocket authentication middleware
+  - [x] `backend/src/websocket/middleware/socket-auth.middleware.ts`
+    - [x] Extracts JWT access token from handshake auth/headers/query
+    - [x] Reuses `auth.service.ts` (`verifyAccessToken`) for token verification
+    - [x] Looks up user via `userRepository.findById` and enforces `UserStatus.ACTIVE`
+    - [x] Attaches `SocketUserData` (with `phoneNumbers` derived from `users.phone_number`) to `AuthenticatedSocket`
+- [x] Connection and room management services
+  - [x] `backend/src/websocket/services/connection-manager.service.ts`
+    - [x] Tracks active connections per user (multi-device support)
+    - [x] Provides `isUserOnline`, `getUserSocketIds`, and `disconnectUser`
+    - [x] Exposes connection statistics and stale-connection cleanup
+  - [x] `backend/src/websocket/services/room-manager.service.ts`
+    - [x] Manages user, phone, call, and broadcast rooms
+    - [x] Auto-joins user and phone rooms on connect
+    - [x] Provides helpers for call rooms and broadcasting to rooms/users
+- [x] WebSocket event handlers
+  - [x] `backend/src/websocket/handlers/connection.handler.ts`
+    - [x] Registers connections and joins user rooms
+    - [x] Handles auth refresh, presence updates/typing, room join/leave, ping, and disconnect events
+  - [x] `backend/src/websocket/handlers/call.handler.ts`
+    - [x] Handles call initiation, answer, reject, hangup, mute, and hold events
+    - [x] Provides `emitIncomingCall` for future Telnyx webhook integration
+- [x] WebSocket server implementation and exports
+  - [x] `backend/src/websocket/socket-server.ts`
+    - [x] Creates typed `Socket.IO` server attached to the HTTP server
+    - [x] Applies `socketAuthMiddleware` for all connections
+    - [x] Optionally configures Redis adapter via `REDIS_URL`
+    - [x] Exposes `getStats`, `broadcast`, `sendToUser`, and `shutdown`
+  - [x] `backend/src/websocket/index.ts` (module exports for server, types, middleware, services, handlers)
+- [x] Express integration (health and stats)
+  - [x] Updated `backend/src/app.ts` to:
+    - [x] Initialize `SocketServer` on top of the existing HTTP listener in `App.listen()`
+    - [x] Extend `/health` to include WebSocket statistics (connections, users, rooms)
+    - [x] Add `GET /ws/stats` top-level endpoint returning raw WebSocket stats
+- [x] HTTP API routes for WebSocket operations
+  - [x] `backend/src/routes/websocket.routes.ts`
+    - [x] `GET /api/v1/ws/stats` (authenticated) – returns WebSocket server statistics
+    - [x] `POST /api/v1/ws/broadcast` (authenticated) – broadcasts an event to all users, optionally excluding some
+    - [x] `POST /api/v1/ws/send-to-user` (authenticated) – sends an event to a specific user
+    - [x] `POST /api/v1/ws/disconnect-user` (authenticated) – force-disconnects a user
+    - [x] `GET /api/v1/ws/user/:userId/status` (authenticated) – online status and connection count per user
+  - [x] Updated `backend/src/routes/index.ts` to mount WebSocket routes under `/ws`
+- [x] Test client and verification tooling
+  - [x] `backend/tests/websocket-test-client.ts`
+    - [x] Uses `socket.io-client` to connect to `ws://localhost:3000` with a test JWT access token
+    - [x] Exercises `connection:established`, `ping`, `presence:update`, and `room:join` flows
+
+## How to Install and Run (WebSocket)
+
+1) Install dependencies (from `backend`):
+- `npm install`
+
+2) Ensure environment is configured:
+- Copy `backend/env.example` → `backend/.env` and verify:
+  - `JWT_ACCESS_SECRET` is set (used for WebSocket auth)
+  - `WS_CORS_ORIGIN` includes your local frontend origins
+  - Optionally set `REDIS_URL` if you want to test the Redis adapter
+
+3) Start the server (dev):
+- `npm run dev`
+- Expected logs include:
+  - `🚀 Server is running on port 3000`
+  - `🏥 Health Check: http://localhost:3000/health`
+  - `🔌 WebSocket server ready on port 3000`
+
+4) Test WebSocket connectivity:
+- In a separate terminal (from `backend`):
+  - `npx ts-node tests/websocket-test-client.ts`
+- Expected console output:
+  - `Connection established: { connectionId, serverTime, user: { ... } }`
+  - `Pong received, server time: ...`
+  - `Presence update sent`
+  - `Room join response: { success: true, roomId: 'test-room-1', participants: [...] }`
+
+5) Verify health and stats endpoints:
+- `GET http://localhost:3000/health`
+  - Includes `websocket` object with `connections`, `users`, `rooms` (or `null` if not yet initialized)
+- `GET http://localhost:3000/ws/stats`
+  - Returns raw WebSocket `connections` and `rooms` stats
+- `GET http://localhost:3000/api/v1/ws/stats` (with valid `Authorization: Bearer <accessToken>`)
+  - Returns WebSocket stats wrapped in `{ success: true, data: ... }`
+
+## Notes
+
+- WebSocket authentication uses the same JWT access tokens as the REST API via `auth.service.verifyAccessToken`.
+- Currently, `phoneNumbers` for a socket user are derived from the primary `users.phone_number` field; a dedicated phone-numbers repository can be integrated later.
+- Redis integration for Socket.IO is optional; if `REDIS_URL` is not set, the server runs in single-instance mode.
+- WebSocket HTTP routes are protected by the existing `authenticateToken` middleware and are intended for internal/admin use (broadcasts, user disconnects, status checks).
+
+## Status
+
+- [x] WebSocket server attached to existing Express HTTP server
+- [x] JWT-authenticated Socket.IO connections with per-user rooms
+- [x] Connection and room management services with basic stats and cleanup
+- [x] Call-related event handlers ready for Telnyx integration in later tasks
+- [x] Health and stats endpoints exposing WebSocket metrics
+- [x] Checklist and documentation updated for Task 12
+- JWT payloads include `userId`, `email`, and `type` (`access` or `refresh`); `auth.middleware.ts` attaches the decoded payload as `req.authUser` for downstream handlers.

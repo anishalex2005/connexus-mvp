@@ -1,14 +1,33 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
 import callRoutes from './call.routes';
 import aiRoutes from './ai.routes';
 import smsRoutes from './sms.routes';
 import analyticsRoutes from './analytics.routes';
+import websocketRoutes from './websocket.routes';
+import { userRepository, callRecordRepository } from '../repositories';
 
 const router = Router();
 
-router.get('/docs', (_req, res) => {
+// API Info endpoint
+router.get('/', (_req: Request, res: Response) => {
+  res.json({
+    name: 'ConnexUS API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/auth',
+      users: '/users',
+      calls: '/calls',
+      sms: '/sms',
+      ai: '/ai',
+      analytics: '/analytics',
+    },
+  });
+});
+
+// API Documentation endpoint
+router.get('/docs', (_req: Request, res: Response) => {
   res.json({
     message: 'API Documentation',
     endpoints: {
@@ -22,12 +41,44 @@ router.get('/docs', (_req, res) => {
   });
 });
 
+// Test database connectivity and repositories (development only)
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/test-db', async (_req: Request, res: Response) => {
+    try {
+      const userCount = await userRepository.count();
+      const testUser = await userRepository.findByEmail('test@connexus.dev');
+
+      let callStats: unknown = null;
+      if (testUser) {
+        callStats = await callRecordRepository.getStats(testUser.id);
+      }
+
+      res.json({
+        success: true,
+        message: 'Database connection and repositories working correctly',
+        data: {
+          userCount,
+          testUserExists: !!testUser,
+          testUserEmail: testUser?.email,
+          callStats,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+}
+
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/calls', callRoutes);
 router.use('/ai', aiRoutes);
 router.use('/sms', smsRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/ws', websocketRoutes);
 
 export default router;
 

@@ -9,13 +9,13 @@ class AppTheme {
   static const Color errorColor = Color(0xFFE91E63);
   static const Color successColor = Color(0xFF4CAF50);
   static const Color warningColor = Color(0xFFFF9800);
-  
+
   // Neutral colors
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color surfaceColor = Colors.white;
   static const Color textPrimaryColor = Color(0xFF212121);
   static const Color textSecondaryColor = Color(0xFF757575);
-  
+
   // Light theme
   static ThemeData get lightTheme {
     return ThemeData(
@@ -23,7 +23,6 @@ class AppTheme {
       brightness: Brightness.light,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
-      
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
         secondary: accentColor,
@@ -36,14 +35,12 @@ class AppTheme {
         onSurface: textPrimaryColor,
         onBackground: textPrimaryColor,
       ),
-      
       appBarTheme: const AppBarTheme(
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: textPrimaryColor,
         centerTitle: true,
       ),
-      
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
@@ -54,13 +51,11 @@ class AppTheme {
           ),
         ),
       ),
-      
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
         ),
       ),
-      
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryColor,
@@ -71,7 +66,6 @@ class AppTheme {
           ),
         ),
       ),
-      
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
@@ -100,7 +94,6 @@ class AppTheme {
           vertical: 14,
         ),
       ),
-      
       cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -110,7 +103,7 @@ class AppTheme {
       ),
     );
   }
-  
+
   // Dark theme
   static ThemeData get darkTheme {
     return ThemeData(
@@ -118,7 +111,6 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: const Color(0xFF121212),
-      
       colorScheme: const ColorScheme.dark(
         primary: primaryColor,
         secondary: accentColor,
@@ -131,14 +123,12 @@ class AppTheme {
         onSurface: Colors.white,
         onBackground: Colors.white,
       ),
-      
       appBarTheme: const AppBarTheme(
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
-      
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
@@ -149,7 +139,6 @@ class AppTheme {
           ),
         ),
       ),
-      
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: Color(0xFF1E1E1E),
@@ -170,7 +159,6 @@ class AppTheme {
           vertical: 14,
         ),
       ),
-      
       cardTheme: CardThemeData(
         elevation: 4,
         color: const Color(0xFF1E1E1E),
@@ -182,5 +170,3 @@ class AppTheme {
     );
   }
 }
-
-

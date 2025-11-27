@@ -13,29 +13,29 @@ class SplashScreen extends BaseScreen {
 class _SplashScreenState extends BaseScreenState<SplashScreen> {
   @override
   bool get showAppBar => false;
-  
+
   @override
   Color get backgroundColor => Theme.of(context).primaryColor;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
   }
-  
+
   Future<void> _initializeApp() async {
     Logger.info('Initializing app...');
-    
+
     // Simulate initialization delay
     await Future.delayed(const Duration(seconds: 2));
-    
+
     // Navigate to appropriate screen (placeholder -> login for now)
     if (mounted) {
       Logger.info('App initialized successfully');
       AppRouter.navigateAndReplace(context, AppRouter.login);
     }
   }
-  
+
   @override
   Widget buildContent(BuildContext context) {
     return Center(
@@ -82,6 +82,3 @@ class _SplashScreenState extends BaseScreenState<SplashScreen> {
     );
   }
 }
-
-
-

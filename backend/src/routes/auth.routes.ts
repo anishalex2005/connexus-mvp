@@ -1,71 +1,53 @@
-import { Router, Request, Response } from 'express';
-import { body } from 'express-validator';
-import { validateRequest } from '../middleware/validation.middleware';
-import { asyncHandler } from '../middleware/error.middleware';
+import { Router } from 'express';
+import authController from '../controllers/auth.controller';
+import { authenticateToken, rateLimitAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.post(
-  '/register',
-  [
-    body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 8 }).trim(),
-    body('firstName').notEmpty().trim(),
-    body('lastName').notEmpty().trim(),
-    validateRequest,
-  ],
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(201).json({
-      status: 'success',
-      message: 'Registration endpoint - To be implemented in Task 11',
-      data: req.body,
-    });
-  })
-);
+/**
+ * @route   POST /api/v1/auth/register
+ * @desc    Register a new user
+ * @access  Public
+ */
+router.post('/register', rateLimitAuth, (req, res) => {
+  void authController.register(req, res);
+});
 
-router.post(
-  '/login',
-  [body('email').isEmail().normalizeEmail(), body('password').notEmpty(), validateRequest],
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'success',
-      message: 'Login endpoint - To be implemented in Task 11',
-      data: req.body,
-    });
-  })
-);
+/**
+ * @route   POST /api/v1/auth/login
+ * @desc    Login user and get tokens
+ * @access  Public
+ */
+router.post('/login', rateLimitAuth, (req, res) => {
+  void authController.login(req, res);
+});
 
-router.post(
-  '/logout',
-  asyncHandler(async (_req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'success',
-      message: 'Logout endpoint - To be implemented in Task 11',
-    });
-  })
-);
+/**
+ * @route   POST /api/v1/auth/refresh
+ * @desc    Refresh access token
+ * @access  Public (requires valid refresh token in body)
+ */
+router.post('/refresh', (req, res) => {
+  void authController.refreshToken(req, res);
+});
 
-router.post(
-  '/refresh',
-  asyncHandler(async (_req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'success',
-      message: 'Token refresh endpoint - To be implemented in Task 11',
-    });
-  })
-);
+/**
+ * @route   POST /api/v1/auth/logout
+ * @desc    Logout user
+ * @access  Private
+ */
+router.post('/logout', authenticateToken, (req, res) => {
+  void authController.logout(req, res);
+});
 
-router.post(
-  '/forgot-password',
-  [body('email').isEmail().normalizeEmail(), validateRequest],
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({
-      status: 'success',
-      message: 'Password reset endpoint - To be implemented in Task 29',
-      data: req.body,
-    });
-  })
-);
+/**
+ * @route   GET /api/v1/auth/me
+ * @desc    Get current user profile
+ * @access  Private
+ */
+router.get('/me', authenticateToken, (req, res) => {
+  void authController.getCurrentUser(req, res);
+});
 
 export default router;
 

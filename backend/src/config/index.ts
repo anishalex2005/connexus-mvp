@@ -27,6 +27,8 @@ export interface Config {
     name: string;
     user: string;
     password: string;
+    poolMin: number;
+    poolMax: number;
   };
   logging: {
     level: string;
@@ -62,9 +64,11 @@ const config: Config = {
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
-    name: process.env.DB_NAME || 'connexus_dev',
-    user: process.env.DB_USER || 'connexus_user',
-    password: process.env.DB_PASSWORD || 'secure_password',
+    name: process.env.DB_NAME || 'connexus_development',
+    user: process.env.DB_USER || 'connexus_dev',
+    password: process.env.DB_PASSWORD || 'connexus_dev_password',
+    poolMin: parseInt(process.env.DB_POOL_MIN || '2', 10),
+    poolMax: parseInt(process.env.DB_POOL_MAX || '10', 10),
   },
   logging: {
     level: process.env.LOG_LEVEL || 'debug',

@@ -22,6 +22,3 @@ class NoParams extends Params {
   @override
   List<Object?> get props => [];
 }
-
-
-

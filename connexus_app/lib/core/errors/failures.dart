@@ -51,5 +51,3 @@ class CallFailure extends Failure {
     String? code,
   }) : super(message: message, code: code);
 }
-
-

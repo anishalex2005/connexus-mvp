@@ -38,4 +38,3 @@ Future<void> configureDependencies() async {
 
   // Register repositories, use cases, blocs/providers in future tasks
 }
-

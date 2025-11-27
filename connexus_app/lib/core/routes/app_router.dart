@@ -17,7 +17,7 @@ class AppRouter {
   static const String callHistory = '/call-history';
   static const String aiConfig = '/ai-config';
   static const String smsTemplates = '/sms-templates';
-  
+
   /// Generate route based on settings
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -43,7 +43,7 @@ class AppRouter {
         );
     }
   }
-  
+
   /// Navigate to a named route
   static Future<T?> navigateTo<T>(
     BuildContext context,
@@ -56,7 +56,7 @@ class AppRouter {
       arguments: arguments,
     );
   }
-  
+
   /// Replace current route with a named route
   static Future<T?> navigateAndReplace<T>(
     BuildContext context,
@@ -69,7 +69,7 @@ class AppRouter {
       arguments: arguments,
     );
   }
-  
+
   /// Clear stack and navigate to a named route
   static Future<T?> navigateAndClearStack<T>(
     BuildContext context,
@@ -83,16 +83,14 @@ class AppRouter {
       arguments: arguments,
     );
   }
-  
+
   /// Pop current route
   static void pop<T>(BuildContext context, [T? result]) {
     Navigator.pop(context, result);
   }
-  
+
   /// Pop until a specific route
   static void popUntil(BuildContext context, String routeName) {
     Navigator.popUntil(context, ModalRoute.withName(routeName));
   }
 }
-
-

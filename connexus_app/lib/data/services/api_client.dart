@@ -98,5 +98,3 @@ class AuthInterceptor extends Interceptor {
     super.onRequest(options, handler);
   }
 }
-
-

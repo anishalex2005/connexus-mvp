@@ -112,9 +112,8 @@ class _RecentCallCard extends StatelessWidget {
     final icon = call.direction == CallDirection.outbound
         ? Icons.north_east
         : Icons.south_west;
-    final iconColor = call.direction == CallDirection.outbound
-        ? Colors.green
-        : Colors.blue;
+    final iconColor =
+        call.direction == CallDirection.outbound ? Colors.green : Colors.blue;
 
     return Card(
       elevation: 0,
@@ -187,7 +186,3 @@ class _MockCall {
 }
 
 enum CallDirection { inbound, outbound }
-
-
-
-

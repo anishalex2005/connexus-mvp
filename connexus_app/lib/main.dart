@@ -27,4 +27,3 @@ Future<void> main() async {
   // Run app
   runApp(const ConnexUSApp());
 }
-

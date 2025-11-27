@@ -16,14 +16,17 @@ class AppConfig {
   static Environment get environment => _environment;
 
   // API Configuration
-  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:3000';
+  static String get apiBaseUrl =>
+      dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:3000';
   static String get apiVersion => dotenv.env['API_VERSION'] ?? 'v1';
-  static int get apiTimeout => int.tryParse(dotenv.env['API_TIMEOUT'] ?? '') ?? 30000;
+  static int get apiTimeout =>
+      int.tryParse(dotenv.env['API_TIMEOUT'] ?? '') ?? 30000;
 
   // Telnyx Configuration
   static String get telnyxApiKey => dotenv.env['TELNYX_API_KEY'] ?? '';
   static String get telnyxSipUser => dotenv.env['TELNYX_SIP_USER'] ?? '';
-  static String get telnyxSipPassword => dotenv.env['TELNYX_SIP_PASSWORD'] ?? '';
+  static String get telnyxSipPassword =>
+      dotenv.env['TELNYX_SIP_PASSWORD'] ?? '';
   static String get telnyxWebhookUrl => dotenv.env['TELNYX_WEBHOOK_URL'] ?? '';
 
   // Retell AI Configuration
@@ -35,10 +38,14 @@ class AppConfig {
   static String get fcmServerKey => dotenv.env['FCM_SERVER_KEY'] ?? '';
 
   // Feature Flags
-  static bool get enableCallRecording => (dotenv.env['ENABLE_CALL_RECORDING'] ?? 'false').toLowerCase() == 'true';
-  static bool get enableAnalytics => (dotenv.env['ENABLE_ANALYTICS'] ?? 'false').toLowerCase() == 'true';
-  static bool get enableCrashReporting => (dotenv.env['ENABLE_CRASH_REPORTING'] ?? 'false').toLowerCase() == 'true';
-  static bool get debugMode => (dotenv.env['DEBUG_MODE'] ?? 'true').toLowerCase() == 'true';
+  static bool get enableCallRecording =>
+      (dotenv.env['ENABLE_CALL_RECORDING'] ?? 'false').toLowerCase() == 'true';
+  static bool get enableAnalytics =>
+      (dotenv.env['ENABLE_ANALYTICS'] ?? 'false').toLowerCase() == 'true';
+  static bool get enableCrashReporting =>
+      (dotenv.env['ENABLE_CRASH_REPORTING'] ?? 'false').toLowerCase() == 'true';
+  static bool get debugMode =>
+      (dotenv.env['DEBUG_MODE'] ?? 'true').toLowerCase() == 'true';
 
   // App Configuration
   static String get appName => dotenv.env['APP_NAME'] ?? 'ConnexUS';
@@ -95,8 +102,8 @@ class AppConfig {
   static bool get isDebug => kDebugMode;
 
   static String getApiUrl(String endpoint) {
-    final String normalized = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    final String normalized =
+        endpoint.startsWith('/') ? endpoint : '/$endpoint';
     return '$apiBaseUrl/api/$apiVersion$normalized';
   }
 }
-

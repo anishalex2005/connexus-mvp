@@ -9,35 +9,35 @@ abstract class BaseScreen extends StatefulWidget {
 abstract class BaseScreenState<T extends BaseScreen> extends State<T> {
   /// Override to set custom status bar appearance
   SystemUiOverlayStyle get systemUiOverlayStyle => SystemUiOverlayStyle.dark;
-  
+
   /// Override to set screen background color
   Color get backgroundColor => Colors.white;
-  
+
   /// Override to handle back button press
   Future<bool> onWillPop() async => true;
-  
+
   /// Override to enable safe area
   bool get useSafeArea => true;
-  
+
   /// Override to show app bar
   bool get showAppBar => true;
-  
+
   /// Override to set app bar title
   String get appBarTitle => '';
-  
+
   /// Override to add app bar actions
   List<Widget> get appBarActions => [];
-  
+
   /// Build the main content of the screen
   Widget buildContent(BuildContext context);
-  
+
   @override
   void initState() {
     super.initState();
     // Set status bar style
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -45,16 +45,16 @@ abstract class BaseScreenState<T extends BaseScreen> extends State<T> {
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: showAppBar ? _buildAppBar() : null,
-        body: useSafeArea 
+        body: useSafeArea
             ? SafeArea(child: buildContent(context))
             : buildContent(context),
       ),
     );
   }
-  
+
   PreferredSizeWidget? _buildAppBar() {
     if (!showAppBar) return null;
-    
+
     return AppBar(
       title: Text(appBarTitle),
       actions: appBarActions,
@@ -63,7 +63,7 @@ abstract class BaseScreenState<T extends BaseScreen> extends State<T> {
       systemOverlayStyle: systemUiOverlayStyle,
     );
   }
-  
+
   /// Show a snackbar with a message
   void showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -74,7 +74,7 @@ abstract class BaseScreenState<T extends BaseScreen> extends State<T> {
       ),
     );
   }
-  
+
   /// Show a loading dialog
   void showLoadingDialog({String? message}) {
     showDialog(
@@ -103,12 +103,9 @@ abstract class BaseScreenState<T extends BaseScreen> extends State<T> {
       ),
     );
   }
-  
+
   /// Hide loading dialog
   void hideLoadingDialog() {
     Navigator.of(context).pop();
   }
 }
-
-
-
