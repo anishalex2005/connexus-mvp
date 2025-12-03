@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../base_screen.dart';
+import '../../widgets/connection_status_indicator.dart';
 
 class HomeScreen extends BaseScreen {
   const HomeScreen({Key? key}) : super(key: key);
@@ -46,6 +47,8 @@ class _HomeScreenState extends BaseScreenState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const ConnectionStatusCard(),
+          const SizedBox(height: 16),
           Text(
             'AI Call Overview',
             style: theme.textTheme.headlineSmall?.copyWith(

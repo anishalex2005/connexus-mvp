@@ -14,9 +14,15 @@ Development (.env.development):
 API_BASE_URL=http://10.0.2.2:3000
 API_VERSION=v1
 API_TIMEOUT=30000
+
+# Telnyx (development)
 TELNYX_API_KEY=KEY_TEST_xxxxx
-TELNYX_SIP_USER=dev_user
+# Preferred new naming (used by Telnyx integration)
+TELNYX_SIP_USERNAME=dev_user
 TELNYX_SIP_PASSWORD=dev_password
+TELNYX_CALLER_ID=+15551234567
+TELNYX_CALLER_ID_NAME=ConnexUS Dev
+TELNYX_DEBUG=true
 TELNYX_WEBHOOK_URL=http://localhost:3000/webhooks/telnyx
 RETELL_API_KEY=dev_retell_key
 RETELL_AGENT_ID=dev_agent_001
@@ -35,9 +41,14 @@ Staging (.env.staging):
 API_BASE_URL=https://staging-api.connexus.app
 API_VERSION=v1
 API_TIMEOUT=30000
+
+# Telnyx (staging)
 TELNYX_API_KEY=KEY_TEST_staging_xxxxx
-TELNYX_SIP_USER=staging_user
+TELNYX_SIP_USERNAME=staging_user
 TELNYX_SIP_PASSWORD=staging_password
+TELNYX_CALLER_ID=+15557654321
+TELNYX_CALLER_ID_NAME=ConnexUS Staging
+TELNYX_DEBUG=true
 TELNYX_WEBHOOK_URL=https://staging-api.connexus.app/webhooks/telnyx
 RETELL_API_KEY=staging_retell_key
 RETELL_AGENT_ID=staging_agent_001
@@ -56,9 +67,14 @@ Production (.env.production):
 API_BASE_URL=https://api.connexus.app
 API_VERSION=v1
 API_TIMEOUT=20000
+
+# Telnyx (production)
 TELNYX_API_KEY=KEY_LIVE_xxxxx
-TELNYX_SIP_USER=prod_user
+TELNYX_SIP_USERNAME=prod_user
 TELNYX_SIP_PASSWORD=prod_password
+TELNYX_CALLER_ID=+15559876543
+TELNYX_CALLER_ID_NAME=ConnexUS
+TELNYX_DEBUG=false
 TELNYX_WEBHOOK_URL=https://api.connexus.app/webhooks/telnyx
 RETELL_API_KEY=prod_retell_key
 RETELL_AGENT_ID=prod_agent_001

@@ -791,3 +791,192 @@ Use this section to track Task 12 progress and outputs.
 - [x] Health and stats endpoints exposing WebSocket metrics
 - [x] Checklist and documentation updated for Task 12
 - JWT payloads include `userId`, `email`, and `type` (`access` or `refresh`); `auth.middleware.ts` attaches the decoded payload as `req.authUser` for downstream handlers.
+
+# ConnexUS Task 13 Checklist (Integrate Telnyx Flutter SDK)
+
+Use this section to track Task 13 progress and outputs.
+
+## Task 13 Deliverables
+
+- [x] Telnyx Flutter dependencies added
+  - [x] `telnyx_webrtc` added to `connexus_app/pubspec.yaml`
+  - [x] `permission_handler` added to `connexus_app/pubspec.yaml`
+  - [x] `flutter_callkit_incoming` added to `connexus_app/pubspec.yaml`
+- [x] Telnyx configuration model and env wiring
+  - [x] `connexus_app/lib/core/config/telnyx_config.dart` created
+  - [x] `connexus_app/lib/core/config/app_config.dart` updated with Telnyx-specific getters and `telnyxConfig`/`hasTelnyxConfig`
+  - [x] `connexus_app/env/README.md` updated with `TELNYX_SIP_USERNAME`, `TELNYX_SIP_PASSWORD`, `TELNYX_CALLER_ID`, `TELNYX_CALLER_ID_NAME`, `TELNYX_DEBUG`
+- [x] Android configuration for Telnyx/WebRTC
+  - [x] `connexus_app/android/app/src/main/AndroidManifest.xml` updated with VoIP permissions, required hardware features, and `TelnyxCallService`
+  - [x] `connexus_app/android/app/build.gradle.kts` updated with `minSdk` ≥ 24, MultiDex enabled, and `androidx.multidex:multidex:2.0.1` dependency
+  - [x] `connexus_app/android/build.gradle.kts` updated to include JitPack (`https://jitpack.io`) in repositories
+- [x] iOS configuration for Telnyx/WebRTC
+  - [x] `connexus_app/ios/Runner/Info.plist` updated with microphone, Bluetooth, background modes (voip/audio/fetch/remote-notification), ATS, and required device capabilities
+  - [x] `connexus_app/ios/Podfile` created with `platform :ios, '13.0'`, `TelnyxRTC` pod, Bitcode disabled, and permission_handler defines
+- [x] Telnyx core services
+  - [x] `connexus_app/lib/data/services/telnyx_service.dart` created (singleton Telnyx client wrapper, connection state, event handling)
+  - [x] `connexus_app/lib/data/services/permission_service.dart` created (runtime microphone/phone/Bluetooth permissions)
+- [x] App initialization wiring
+  - [x] `connexus_app/lib/presentation/widgets/telnyx_initializer.dart` created to request permissions and initialize Telnyx SDK on startup
+  - [x] `connexus_app/lib/main.dart` updated to wrap `ConnexUSApp` with `TelnyxInitializer` and log Telnyx init status
+  - [x] `connexus_app/lib/main_development.dart` updated to wrap `ConnexUSApp` with `TelnyxInitializer`
+  - [x] `connexus_app/lib/main_staging.dart` updated to wrap `ConnexUSApp` with `TelnyxInitializer`
+  - [x] `connexus_app/lib/main_production.dart` updated to wrap `ConnexUSApp` with `TelnyxInitializer`
+- [x] Tests and verification scaffolding
+  - [x] `connexus_app/test/unit/telnyx_service_test.dart` added to validate `TelnyxService` default state, `TelnyxConfig` validation, and `PermissionService.getPermissionMessage`
+  - [x] Analyzer/lints run on `connexus_app/lib` and `connexus_app/test` with no new issues reported
+
+## Notes
+
+- Telnyx credentials are sourced from the Flutter env files under `connexus_app/env/.env.*` via `AppConfig` (not from a root `.env`).
+- `AppConfig.hasTelnyxConfig` is used by `TelnyxInitializer` to skip SDK initialization gracefully if Telnyx credentials are not present.
+- Actual SIP registration (`TelnyxService.connect`) and call handling (incoming/outgoing) will be implemented in Task 14+; the current task focuses on safe SDK wiring and platform configuration.
+
+# ConnexUS Task 14 Checklist (Implement SIP Registration/Authentication)
+
+Use this section to track Task 14 progress and outputs.
+
+## Task 14 Deliverables
+
+- [x] Telnyx SIP credentials model
+  - [x] `connexus_app/lib/data/models/telnyx_credentials.dart`
+- [x] Connection state and events
+  - [x] `connexus_app/lib/domain/telephony/telnyx_connection_state.dart`
+- [x] Secure credential storage service
+  - [x] `connexus_app/lib/data/services/secure_storage_service.dart`
+- [x] Telnyx service with SIP registration and retry logic
+  - [x] `connexus_app/lib/data/services/telnyx_service.dart` (uses `TelnyxCredentials`, connection state streams, exponential backoff, and integrates with `TelnyxClient`)
+- [x] Telephony repository and API endpoints (Flutter)
+  - [x] `connexus_app/lib/core/network/api_endpoints.dart` (telephony endpoints)
+  - [x] `connexus_app/lib/data/repositories/telephony_repository.dart`
+- [x] Dependency injection wiring
+  - [x] `connexus_app/lib/injection.dart` updated to register `SecureStorageService`, `ApiClient`, `TelephonyRepository`, and `TelnyxService` with retry config
+  - [x] `connexus_app/lib/main_development.dart`, `main_staging.dart`, `main_production.dart` updated to call `configureDependencies()`
+- [x] Connection status UI widgets
+  - [x] `connexus_app/lib/presentation/widgets/connection_status_indicator.dart` (indicator + status card with retry)
+  - [x] `connexus_app/lib/presentation/widgets/telnyx_initializer.dart` updated to use DI and attempt `connectWithStoredCredentials()`
+- [x] Backend telephony API and persistence
+  - [x] `backend/src/routes/telephony.routes.ts` (CRUD for SIP credentials, FCM token update, connection status)
+  - [x] `backend/src/routes/index.ts` updated to mount `/telephony` routes and document them
+  - [x] `backend/src/database/migrations/20251126000000_create_telephony_credentials.ts` (creates `user_telephony_credentials` and `telephony_connection_logs`)
+- [x] Tests
+  - [x] `connexus_app/test/unit/telnyx_service_test.dart` updated to cover `TelnyxService`, `TelnyxRetryConfig`, `TelnyxCredentials`, and `TelnyxConnectionState` extensions
+
+## Notes
+
+- SIP credentials are now modeled explicitly and can be fetched from the backend via `TelephonyRepository`, stored securely with `SecureStorageService`, and used by `TelnyxService` for SIP registration.
+- Connection state is exposed as a reactive stream and visualized via `ConnectionStatusIndicator` / `ConnectionStatusCard`, enabling future screens to surface telephony health.
+- Backend telephony routes follow the existing Express + Knex pattern and assume users are authenticated via JWT (`authenticateToken` / `AuthenticatedRequest`).
+- Future tasks will extend call handling, WebRTC media negotiation, network change handling, and push notification integration on top of this foundation.
+
+# ConnexUS Task 15 Checklist (Handle WebRTC Connection Establishment)
+
+Use this section to track Task 15 progress and outputs.
+
+## Task 15 Deliverables
+
+- [x] WebRTC configuration models
+  - [x] `connexus_app/lib/domain/models/webrtc_config.dart` (ICE server config and WebRTCConfig with Telnyx defaults)
+  - [x] `connexus_app/lib/domain/models/connection_state.dart` (WebRTCConnectionState, ConnectionQuality, ConnectionStateEvent)
+- [x] Core WebRTC services
+  - [x] `connexus_app/lib/data/services/webrtc_connection_manager.dart` (RTCPeerConnection lifecycle, reconnection, quality monitoring)
+  - [x] `connexus_app/lib/data/services/media_handler.dart` (local audio capture, mute/speaker/device switching)
+  - [x] `connexus_app/lib/data/services/ice_server_provider.dart` (fetches TURN credentials from backend and builds WebRTCConfig)
+- [x] Telnyx service integration
+  - [x] `connexus_app/lib/data/services/telnyx_service.dart` updated to own `WebRTCConnectionManager` and `MediaHandler`, initialize them after SIP registration, and expose WebRTC connection/quality streams plus `forceReconnect()`
+  - [x] `connexus_app/lib/injection.dart` updated to register `IceServerProvider`, `MediaHandler`, `WebRTCConnectionManager`, and inject them into `TelnyxService`
+- [x] Backend WebRTC endpoints
+  - [x] `backend/src/routes/webrtc.routes.ts` (HMAC-based TURN credential generation and ICE server config under `/webrtc`)
+  - [x] `backend/src/routes/index.ts` updated to mount `/webrtc` routes and document them in the API index/docs
+  - [x] `backend/env.example` updated with `TURN_SERVER_URL` and `TURN_SECRET` defaults
+- [x] UI state & widgets for connection quality
+  - [x] `connexus_app/lib/presentation/providers/connection_state_provider.dart` (ChangeNotifier subscribing to WebRTC connection/quality streams and exposing color/text helpers and reconnect)
+  - [x] `connexus_app/lib/presentation/widgets/connection_quality_indicator.dart` (signal bars + quality text + RTT, plus `ConnectionStatusOverlay` for reconnecting/error states)
+- [x] Tests
+  - [x] `connexus_app/test/unit/webrtc_connection_manager_test.dart` (basic WebRTCConnectionManager behavior, WebRTCConfig, ConnectionQuality, and IceServerConfig tests)
+
+## Notes
+
+- WebRTC configuration and connection management are now encapsulated in dedicated models/services, and wired into `TelnyxService` via DI so future tasks (network change handling, call UI) can reuse them.
+- Backend WebRTC routes expose time-limited TURN credentials derived from `TURN_SECRET`, ensuring clients can obtain fresh ICE server configuration without hard-coding credentials in the app.
+- The new `ConnectionStateProvider` and `ConnectionQualityIndicator` / `ConnectionStatusOverlay` widgets provide a reusable UI surface for showing current call connectivity and quality.
+
+# ConnexUS Task 16 Checklist (Implement Network Change Handling)
+
+Use this section to track Task 16 progress and outputs.
+
+## Task 16 Deliverables
+
+- [x] Network connectivity models
+  - [x] `connexus_app/lib/domain/models/network_state.dart` (NetworkStatus, NetworkQuality, NetworkState, NetworkChangeEvent, NetworkChangeType)
+- [x] Network monitoring service
+  - [x] `connexus_app/lib/data/services/network_monitor_service.dart` (wraps `connectivity_plus`, debounces changes, exposes `networkStateStream` and `networkChangeStream`, basic host reachability helpers)
+- [x] Call network handler
+  - [x] `connexus_app/lib/data/services/call_network_handler.dart` (listens to `NetworkMonitorService`, coordinates with `TelnyxService` for reconnection, handover, and emits `CallNetworkEvent`s for UI)
+- [x] TelnyxService integration
+  - [x] `connexus_app/lib/data/services/telnyx_service.dart` updated with:
+    - [x] Strongly-typed `TelnyxCallState` enum and `callStateStream`
+    - [x] `reconnect()` method for network-triggered reconnection using stored credentials and connection state stream
+    - [x] `refreshRegistration()` helper (simulated for now) and `_waitForRegistration()` with timeout
+- [x] Dependency injection and app startup wiring
+  - [x] `connexus_app/lib/injection.dart` updated to register `NetworkMonitorService` and `CallNetworkHandler`, dispose them in `disposeDependencies()`, and expose `initializeServices()` that starts monitoring and initializes the handler
+  - [x] `connexus_app/lib/main.dart` updated to call `initializeServices()` after `configureDependencies()` so network monitoring is live from app launch
+- [x] Network status UI
+  - [x] `connexus_app/lib/presentation/widgets/network_status_indicator.dart` added with:
+    - [x] `NetworkStatusIndicator` widget (WiFi/cellular/ethernet/no-connection icon + label driven by `NetworkMonitorService`)
+    - [x] `NetworkWarningBanner` widget for surfacing connectivity issues (no network, poor/unstable quality) in call-related screens
+- [x] Tests
+  - [x] `connexus_app/test/services/network_monitor_service_test.dart` added:
+    - [x] Uses `mockito` `MockConnectivity` to simulate connectivity changes
+    - [x] Covers initial state, WiFi/cellular/none mapping, change events (typeChanged/disconnected/reconnected), debouncing, and `NetworkState` helper methods
+  - [ ] Integration tests (optional)
+    - [ ] `integration_test/network_handling_test.dart` can be added later once `flutter pub get` resolves (currently blocked by existing `flutter_webrtc`/`telnyx_webrtc` version conflict)
+
+## Notes
+
+- `connectivity_plus` and `rxdart` were already present in `connexus_app/pubspec.yaml`; Task 16 reuses them for network monitoring and reactive streams.
+- `NetworkMonitorService` currently assigns a default `NetworkQuality.good` for connected states; detailed quality calculation will be implemented in Task 18 using WebRTC statistics and existing `ConnectionQuality` plumbing.
+- `CallNetworkHandler` is wired for future call state integration via `TelnyxService.callStateStream`; for now, call flows should invoke `onCallStarted()` / `onCallEnded()` when a call begins/ends so network changes are handled appropriately.
+- `flutter pub get` and `flutter test` are currently failing in this environment due to a pre-existing dependency conflict between `telnyx_webrtc ^3.2.0` and `flutter_webrtc ^0.9.47`; upgrading `flutter_webrtc` to a version compatible with `telnyx_webrtc` (for example `^1.2.1` as suggested by `flutter pub get`) will be required before running the new Task 16 tests locally or in CI.
+
+# ConnexUS Task 17 Checklist (Add Connection Retry Logic)
+
+Use this section to track Task 17 progress and outputs.
+
+## Task 17 Deliverables
+
+- [x] Retry configuration model
+  - [x] `connexus_app/lib/core/config/retry_config.dart` (centralized retry configuration with SIP, call connection, and quick-retry presets)
+- [x] Retry state and result models
+  - [x] `connexus_app/lib/core/models/retry_state.dart` (retry status enum, state tracking, and generic `RetryResult<T>`)
+- [x] Core retry manager
+  - [x] `connexus_app/lib/core/services/retry_manager.dart` (exponential backoff with optional jitter, cancellation support, and per-operation state streams)
+- [x] Registration retry service
+  - [x] `connexus_app/lib/core/services/registration_retry_service.dart` (wraps SIP registration in retry logic, listens to `NetworkMonitorService`, exposes `RegistrationStatus` and `RetryState` stream)
+  - [x] Currently uses a simulated `_performRegistration()` with intentional failures for testing; TODO comments left to wire real `TelnyxService` once Task 14 integration is ready to be reused here.
+- [x] Call retry service
+  - [x] `connexus_app/lib/core/services/call_retry_service.dart` (handles outbound call initiation, reconnect, and WebRTC reconnect with separate `RetryConfig` profiles)
+  - [x] Provides `makeCall`, `reconnectCall`, and `reconnectWebRTC` helpers plus per-call retry state streams for UI/analytics
+- [x] Dependency injection wiring
+  - [x] `connexus_app/lib/injection.dart` updated to register:
+    - [x] `RetryManager` as a lazy singleton
+    - [x] `RegistrationRetryService` (depending on `RetryManager` and `NetworkMonitorService`)
+    - [x] `CallRetryService` (depending on `RetryManager` and `NetworkMonitorService`)
+  - [x] `disposeDependencies()` updated to dispose `CallRetryService`, `RegistrationRetryService`, and `RetryManager`
+- [x] Retry status UI widgets
+  - [x] `connexus_app/lib/presentation/widgets/retry_status_widget.dart`
+    - [x] `RetryStatusWidget` for displaying a single `RetryState` (attempt counts, progress, countdown, and actions)
+    - [x] `AnimatedRetryStatusWidget` wiring a `Stream<RetryState?>` into `RetryStatusWidget` for live updates
+- [x] Unit tests
+  - [x] `connexus_app/test/core/services/retry_manager_test.dart`
+    - [x] Covers `RetryConfig` defaults and `copyWith`
+    - [x] Verifies `RetryState.initial`, progress calculation, and `RetryResult` helpers
+    - [x] Exercises `RetryManager.execute` success, retry-then-success, max-attempt failure, non-retryable errors, cancellation, and `onRetry` callback
+  - [x] `flutter test test/core/services/retry_manager_test.dart` passes locally in this environment
+
+## Notes
+
+- Task 17 introduces a generic retry abstraction that can be reused beyond Telnyx/WebRTC in future tasks (e.g., analytics, error recovery).
+- `RegistrationRetryService` and `CallRetryService` are registered via the existing `GetIt` container in `injection.dart` to keep DI consistent with Tasks 13–16 instead of introducing a second service locator file.
+- The registration service currently uses a simulated registration flow with occasional failures to validate backoff and UI behavior; before production, `_performRegistration()` should be updated to call into `TelnyxService` and the simulated failure branch should be removed.
+- Retry state streams (`RetryState` + `RetryStatus`) are ready to be hooked into future call UI work (Tasks 19–25) and call-quality metrics (Task 18) using the `AnimatedRetryStatusWidget`.

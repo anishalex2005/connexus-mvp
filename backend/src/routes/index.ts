@@ -6,6 +6,8 @@ import aiRoutes from './ai.routes';
 import smsRoutes from './sms.routes';
 import analyticsRoutes from './analytics.routes';
 import websocketRoutes from './websocket.routes';
+import telephonyRoutes from './telephony.routes';
+import webrtcRoutes from './webrtc.routes';
 import { userRepository, callRecordRepository } from '../repositories';
 
 const router = Router();
@@ -22,6 +24,8 @@ router.get('/', (_req: Request, res: Response) => {
       sms: '/sms',
       ai: '/ai',
       analytics: '/analytics',
+      telephony: '/telephony',
+      webrtc: '/webrtc',
     },
   });
 });
@@ -37,6 +41,8 @@ router.get('/docs', (_req: Request, res: Response) => {
       ai: '/ai - AI agent configuration endpoints',
       sms: '/sms - SMS management endpoints',
       analytics: '/analytics - Analytics endpoints',
+      telephony: '/telephony - Telephony/SIP credential endpoints',
+      webrtc: '/webrtc - WebRTC ICE/TURN configuration endpoints',
     },
   });
 });
@@ -79,6 +85,8 @@ router.use('/ai', aiRoutes);
 router.use('/sms', smsRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/ws', websocketRoutes);
+router.use('/telephony', telephonyRoutes);
+router.use('/webrtc', webrtcRoutes);
 
 export default router;
 

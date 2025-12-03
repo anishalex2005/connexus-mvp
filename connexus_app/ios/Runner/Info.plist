@@ -24,6 +24,43 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- Microphone Permission (Required for VoIP) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ConnexUS needs microphone access to make and receive voice calls.</string>
+
+	<!-- Background Modes for VoIP -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>voip</string>
+		<string>audio</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Required device capabilities -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+		<string>microphone</string>
+	</array>
+
+	<!-- App Transport Security (relaxed for development; tighten for production) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+
+	<!-- Bluetooth usage for headsets -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>ConnexUS uses Bluetooth for audio routing to headsets.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>ConnexUS uses Bluetooth for audio routing to headsets.</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

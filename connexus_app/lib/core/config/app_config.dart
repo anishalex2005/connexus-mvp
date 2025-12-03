@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'telnyx_config.dart';
+
 /// Application environment
 enum Environment {
   development,
@@ -22,12 +24,47 @@ class AppConfig {
   static int get apiTimeout =>
       int.tryParse(dotenv.env['API_TIMEOUT'] ?? '') ?? 30000;
 
-  // Telnyx Configuration
+  // WebRTC / ICE servers
+  static String? get stunServerUrl => dotenv.env['STUN_SERVER_URL'];
+  static String? get turnServerUrl => dotenv.env['TURN_SERVER_URL'];
+  static String? get turnUsername => dotenv.env['TURN_USERNAME'];
+  static String? get turnPassword => dotenv.env['TURN_PASSWORD'];
+
+  // Telnyx Configuration (generic)
   static String get telnyxApiKey => dotenv.env['TELNYX_API_KEY'] ?? '';
-  static String get telnyxSipUser => dotenv.env['TELNYX_SIP_USER'] ?? '';
   static String get telnyxSipPassword =>
       dotenv.env['TELNYX_SIP_PASSWORD'] ?? '';
   static String get telnyxWebhookUrl => dotenv.env['TELNYX_WEBHOOK_URL'] ?? '';
+
+  /// Telnyx SIP username (supports both legacy TELNYX_SIP_USER and new TELNYX_SIP_USERNAME)
+  static String get telnyxSipUsername =>
+      dotenv.env['TELNYX_SIP_USERNAME'] ?? dotenv.env['TELNYX_SIP_USER'] ?? '';
+
+  /// Telnyx caller ID number for outbound calls
+  static String get telnyxCallerIdNumber =>
+      dotenv.env['TELNYX_CALLER_ID'] ?? '';
+
+  /// Optional Telnyx caller ID name
+  static String? get telnyxCallerIdName => dotenv.env['TELNYX_CALLER_ID_NAME'];
+
+  /// Enable verbose Telnyx SDK logging
+  static bool get telnyxDebugEnabled =>
+      (dotenv.env['TELNYX_DEBUG'] ?? 'false').toLowerCase() == 'true';
+
+  /// Whether required Telnyx config values are present
+  static bool get hasTelnyxConfig =>
+      telnyxSipUsername.isNotEmpty &&
+      telnyxSipPassword.isNotEmpty &&
+      telnyxCallerIdNumber.isNotEmpty;
+
+  /// Build a strongly-typed TelnyxConfig from environment values
+  static TelnyxConfig get telnyxConfig => TelnyxConfig.fromEnvironment(
+        sipUsername: telnyxSipUsername,
+        sipPassword: telnyxSipPassword,
+        callerIdNumber: telnyxCallerIdNumber,
+        callerIdName: telnyxCallerIdName,
+        enableDebugLogging: telnyxDebugEnabled,
+      );
 
   // Retell AI Configuration
   static String get retellApiKey => dotenv.env['RETELL_API_KEY'] ?? '';

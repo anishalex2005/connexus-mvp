@@ -23,10 +23,14 @@ android {
         applicationId = "com.connexus.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Telnyx WebRTC requires minSdkVersion 24+.
+        minSdk = maxOf(24, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Enable MultiDex for larger method counts (WebRTC + Telnyx SDK).
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -70,4 +74,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Required for MultiDex support once Telnyx/WebRTC is added.
+    implementation("androidx.multidex:multidex:2.0.1")
 }

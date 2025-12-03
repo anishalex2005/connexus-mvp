@@ -11,10 +11,15 @@ import 'package:connexus_app/core/config/app_config.dart';
 
 void main() {
   testWidgets('ConnexUSApp builds', (WidgetTester tester) async {
-    // Initialize configuration for tests (development environment)
+    // Initialize configuration for tests (development environment).
     await AppConfig.initialize(Environment.development);
 
     await tester.pumpWidget(const ConnexUSApp());
+
+    // Allow any splash/init timers (e.g., navigation delay) to complete so
+    // there are no pending timers when the test ends.
+    await tester.pumpAndSettle(const Duration(seconds: 3));
+
     expect(find.byType(ConnexUSApp), findsOneWidget);
   });
 }

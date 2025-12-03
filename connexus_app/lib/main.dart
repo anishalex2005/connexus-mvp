@@ -1,29 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'app.dart';
-import 'injection.dart';
 import 'core/config/app_config.dart';
 import 'core/utils/logger.dart';
+import 'injection.dart';
+import 'presentation/widgets/telnyx_initializer.dart';
 
 Future<void> main() async {
-  // Ensure Flutter binding is initialized
+  // Ensure Flutter binding is initialized.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set preferred orientations
-  await SystemChrome.setPreferredOrientations(const [
+  // Set preferred orientations.
+  await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Initialize app configuration for development
+  // Initialize app configuration for development.
   await AppConfig.initialize(Environment.development);
 
-  // Configure dependency injection
+  // Configure dependency injection.
   await configureDependencies();
 
-  // Log app start
+  // Initialize core background services (network monitoring, call handler).
+  await initializeServices();
+
+  // Log app start.
   Logger.info('Starting ConnexUS App...');
 
-  // Run app
-  runApp(const ConnexUSApp());
+  // Run app wrapped with Telnyx initializer.
+  runApp(
+    TelnyxInitializer(
+      onInitialized: () {
+        Logger.info('ConnexUS: Telnyx SDK ready');
+      },
+      onError: (String error) {
+        Logger.error('ConnexUS: Telnyx initialization error - $error');
+      },
+      child: const ConnexUSApp(),
+    ),
+  );
 }

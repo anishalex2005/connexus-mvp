@@ -2,6 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Telnyx Android SDK (via JitPack)
+        maven(url = "https://jitpack.io")
     }
 }
 
