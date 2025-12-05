@@ -9,17 +9,21 @@ if ! command -v flutter >/dev/null 2>&1; then
   exit 0
 fi
 
-# Flutter format check
+# Dart format check (Flutter no longer provides `flutter format`)
 echo "Checking dart format..."
-flutter format --set-exit-if-changed lib test
-if [ $? -ne 0 ]; then
-    echo "❌ Dart format check failed. Please run 'flutter format lib test'"
-    exit 1
+if command -v dart >/dev/null 2>&1; then
+  dart format --set-exit-if-changed lib test
+  if [ $? -ne 0 ]; then
+      echo "❌ Dart format check failed. Please run 'dart format lib test'"
+      exit 1
+  fi
+else
+  echo "Dart CLI not found; skipping format check."
 fi
 
-# Flutter analyze
+# Flutter analyze (limit to Flutter app package to avoid root-only test files)
 echo "Running flutter analyze..."
-flutter analyze
+flutter analyze connexus_app
 if [ $? -ne 0 ]; then
     echo "❌ Flutter analyze failed. Please fix the issues above."
     exit 1

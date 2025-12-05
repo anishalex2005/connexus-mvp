@@ -32,7 +32,7 @@ class _SplashScreenState extends BaseScreenState<SplashScreen> {
     // Navigate to appropriate screen (placeholder -> login for now)
     if (mounted) {
       Logger.info('App initialized successfully');
-      AppRouter.navigateAndReplace(context, AppRouter.login);
+      AppRouter.navigateAndReplace(context, AppRouter.callDemo);
     }
   }
 

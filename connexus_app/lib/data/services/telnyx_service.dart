@@ -1,14 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:rxdart/rxdart.dart';
 
+import '../models/call_quality_metrics.dart';
 import '../models/telnyx_credentials.dart';
 import '../services/secure_storage_service.dart';
 import '../../domain/telephony/telnyx_connection_state.dart';
 import '../../domain/models/connection_state.dart';
-import 'webrtc_connection_manager.dart';
+import 'call_quality_service.dart';
 import 'media_handler.dart';
+import 'quality_metrics_logger.dart';
+import 'webrtc_connection_manager.dart';
 
 /// Configuration for Telnyx connection retry behavior.
 class TelnyxRetryConfig {
@@ -63,6 +67,8 @@ class TelnyxService {
   final TelnyxRetryConfig _retryConfig;
   final WebRTCConnectionManager _connectionManager;
   final MediaHandler _mediaHandler;
+  final CallQualityService? _qualityService;
+  final QualityMetricsLogger? _metricsLogger;
 
   // Current credentials.
   TelnyxCredentials? _currentCredentials;
@@ -86,15 +92,28 @@ class TelnyxService {
   final BehaviorSubject<TelnyxCallState> _callStateSubject =
       BehaviorSubject<TelnyxCallState>.seeded(TelnyxCallState.idle);
 
+  /// Current call start time for duration tracking (used with quality metrics).
+  DateTime? _callStartTime;
+
+  /// Current call ID for logging quality metrics.
+  String? _currentCallId;
+
+  /// Optional external callback when quality level changes.
+  void Function(CallQualityLevel)? onQualityChange;
+
   TelnyxService({
     required SecureStorageService secureStorage,
     TelnyxRetryConfig? retryConfig,
     WebRTCConnectionManager? connectionManager,
     MediaHandler? mediaHandler,
+    CallQualityService? qualityService,
+    QualityMetricsLogger? qualityMetricsLogger,
   })  : _secureStorage = secureStorage,
         _retryConfig = retryConfig ?? const TelnyxRetryConfig(),
         _connectionManager = connectionManager ?? WebRTCConnectionManager(),
-        _mediaHandler = mediaHandler ?? MediaHandler() {
+        _mediaHandler = mediaHandler ?? MediaHandler(),
+        _qualityService = qualityService,
+        _metricsLogger = qualityMetricsLogger {
     // Set singleton instance if not already set.
     _instance ??= this;
   }
@@ -140,6 +159,22 @@ class TelnyxService {
   WebRTCConnectionManager get connectionManager => _connectionManager;
 
   MediaHandler get mediaHandler => _mediaHandler;
+
+  /// Stream of real-time call quality metrics (if monitoring is active).
+  Stream<CallQualityMetrics>? get qualityMetricsStream =>
+      _qualityService?.metricsStream;
+
+  /// Stream of quality level changes.
+  Stream<CallQualityLevel>? get qualityLevelStream =>
+      _qualityService?.qualityLevelStream;
+
+  /// Current quality metrics snapshot.
+  CallQualityMetrics? get currentQualityMetrics =>
+      _qualityService?.currentMetrics;
+
+  /// Current overall quality level.
+  CallQualityLevel? get currentQualityLevel =>
+      _qualityService?.currentQualityLevel;
 
   // ============ Connection Methods ============
 
@@ -337,6 +372,65 @@ class TelnyxService {
     if (identical(_instance, this)) {
       _instance = null;
     }
+  }
+
+  /// Start quality monitoring for an active call.
+  ///
+  /// Should be called after a call is connected/answered, once a
+  /// [RTCPeerConnection] is available.
+  void startQualityMonitoring({
+    required RTCPeerConnection peerConnection,
+    String? callId,
+  }) {
+    final CallQualityService? qualityService = _qualityService;
+    if (qualityService == null) {
+      debugPrint('[TelnyxService] CallQualityService not available');
+      return;
+    }
+
+    _currentCallId = callId ?? DateTime.now().millisecondsSinceEpoch.toString();
+    _callStartTime = DateTime.now();
+
+    // Forward quality changes to external listeners.
+    qualityService.onQualityChange =
+        (CallQualityLevel oldLevel, CallQualityLevel newLevel) {
+      onQualityChange?.call(newLevel);
+    };
+
+    qualityService.startMonitoring(peerConnection, callId: _currentCallId);
+  }
+
+  /// Stop quality monitoring and log metrics.
+  ///
+  /// Should be called when a call ends.
+  Future<void> stopQualityMonitoring({
+    String? callerNumber,
+    String? callDirection,
+  }) async {
+    final CallQualityService? qualityService = _qualityService;
+    if (qualityService == null || !qualityService.isMonitoring) {
+      return;
+    }
+
+    final List<CallQualityMetrics> metrics = qualityService.metricsHistory;
+    final Duration callDuration = _callStartTime != null
+        ? DateTime.now().difference(_callStartTime!)
+        : Duration.zero;
+
+    qualityService.stopMonitoring();
+
+    if (metrics.isNotEmpty && _metricsLogger != null) {
+      await _metricsLogger!.logCallSummary(
+        callId: _currentCallId ?? 'unknown',
+        metrics: metrics,
+        callDuration: callDuration,
+        callerNumber: callerNumber,
+        callDirection: callDirection,
+      );
+    }
+
+    _currentCallId = null;
+    _callStartTime = null;
   }
 
   /// Force a WebRTC reconnection attempt.

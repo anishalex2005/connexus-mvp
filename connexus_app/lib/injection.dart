@@ -1,16 +1,20 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/network/api_client.dart';
+import 'core/services/audio_service.dart';
 import 'core/services/call_retry_service.dart';
 import 'core/services/registration_retry_service.dart';
 import 'core/services/retry_manager.dart';
 import 'data/repositories/telephony_repository.dart';
 import 'data/services/call_network_handler.dart';
+import 'data/services/call_quality_service.dart';
 import 'data/services/ice_server_provider.dart';
 import 'data/services/media_handler.dart';
 import 'data/services/network_monitor_service.dart';
+import 'data/services/quality_metrics_logger.dart';
 import 'data/services/secure_storage_service.dart';
 import 'data/services/telnyx_service.dart';
 import 'data/services/webrtc_connection_manager.dart';
@@ -23,6 +27,21 @@ Future<void> configureDependencies() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   if (!getIt.isRegistered<SharedPreferences>()) {
     getIt.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+  }
+
+  // Shared structured logger for services that need detailed logging.
+  if (!getIt.isRegistered<Logger>()) {
+    getIt.registerLazySingleton<Logger>(
+      () => Logger(
+        printer: PrettyPrinter(
+          methodCount: 1,
+          errorMethodCount: 5,
+          lineLength: 100,
+          colors: true,
+          printEmojis: true,
+        ),
+      ),
+    );
   }
 
   // Dio configuration (low-level HTTP client, if needed directly).
@@ -60,6 +79,12 @@ Future<void> configureDependencies() async {
     );
   }
 
+  if (!getIt.isRegistered<AudioService>()) {
+    getIt.registerLazySingleton<AudioService>(
+      AudioService.new,
+    );
+  }
+
   if (!getIt.isRegistered<ApiClient>()) {
     getIt.registerLazySingleton<ApiClient>(
       ApiClient.new,
@@ -92,6 +117,29 @@ Future<void> configureDependencies() async {
     );
   }
 
+  // Call quality monitoring & logging.
+  if (!getIt.isRegistered<CallQualityService>()) {
+    getIt.registerLazySingleton<CallQualityService>(
+      () => CallQualityService(
+        logger: getIt<Logger>(),
+      ),
+    );
+  }
+
+  if (!getIt.isRegistered<QualityMetricsLogger>()) {
+    getIt.registerLazySingleton<QualityMetricsLogger>(
+      () => QualityMetricsLogger(
+        config: const MetricsLoggerConfig(
+          enableLocalLogging: true,
+          enableRemoteLogging: false, // Enable when backend endpoint is ready.
+          localRetentionDays: 7,
+          detailedLoggingThreshold: 60,
+        ),
+        logger: getIt<Logger>(),
+      ),
+    );
+  }
+
   // Services.
   if (!getIt.isRegistered<TelnyxService>()) {
     getIt.registerLazySingleton<TelnyxService>(
@@ -105,6 +153,8 @@ Future<void> configureDependencies() async {
         ),
         connectionManager: getIt<WebRTCConnectionManager>(),
         mediaHandler: getIt<MediaHandler>(),
+        qualityService: getIt<CallQualityService>(),
+        qualityMetricsLogger: getIt<QualityMetricsLogger>(),
       ),
     );
   }
@@ -152,6 +202,12 @@ Future<void> configureDependencies() async {
 Future<void> disposeDependencies() async {
   if (getIt.isRegistered<TelnyxService>()) {
     getIt<TelnyxService>().dispose();
+  }
+  if (getIt.isRegistered<AudioService>()) {
+    await getIt<AudioService>().dispose();
+  }
+  if (getIt.isRegistered<CallQualityService>()) {
+    getIt<CallQualityService>().dispose();
   }
   if (getIt.isRegistered<CallNetworkHandler>()) {
     await getIt<CallNetworkHandler>().dispose();

@@ -9,5 +9,3 @@ class Environment {
   static String get telnyxConnectionId =>
       const String.fromEnvironment('TELNYX_CONNECTION_ID');
 }
-
-

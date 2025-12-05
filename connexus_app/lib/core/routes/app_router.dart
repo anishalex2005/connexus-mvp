@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../domain/models/call_model.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/login/login_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
+import '../../presentation/screens/call/active_call_screen.dart';
+import '../../presentation/screens/call/incoming_call_screen.dart';
+import '../../presentation/screens/demo/call_demo_screen.dart';
 
 /// Application routing configuration
 class AppRouter {
@@ -12,6 +16,7 @@ class AppRouter {
   static const String home = '/home';
   static const String call = '/call';
   static const String incomingCall = '/incoming-call';
+  static const String callDemo = '/demo';
   static const String settings = '/settings';
   static const String profile = '/profile';
   static const String callHistory = '/call-history';
@@ -32,6 +37,22 @@ class AppRouter {
       case home:
         return MaterialPageRoute(
           builder: (_) => const HomeScreen(),
+        );
+      case call:
+        return MaterialPageRoute(
+          builder: (_) => const ActiveCallScreen(),
+        );
+      case incomingCall:
+        final call = settings.arguments;
+        return MaterialPageRoute(
+          builder: (_) => IncomingCallScreen(
+            call: call is CallModel ? call : null,
+          ),
+          fullscreenDialog: true,
+        );
+      case callDemo:
+        return MaterialPageRoute(
+          builder: (_) => const CallDemoScreen(),
         );
       default:
         return MaterialPageRoute(

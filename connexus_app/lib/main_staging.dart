@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'app.dart';
 import 'core/config/app_config.dart';
+import 'core/utils/logger.dart';
 import 'injection.dart';
+import 'presentation/providers/call_provider.dart';
 import 'presentation/widgets/telnyx_initializer.dart';
 
 Future<void> main() async {
@@ -15,10 +18,28 @@ Future<void> main() async {
 
   await AppConfig.initialize(Environment.staging);
   await configureDependencies();
+  await initializeServices();
+
+  Logger.info('Starting ConnexUS App (staging)...');
 
   runApp(
-    const TelnyxInitializer(
-      child: ConnexUSApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<CallProvider>(
+          create: (_) => CallProvider(),
+        ),
+      ],
+      child: TelnyxInitializer(
+        onInitialized: () {
+          Logger.info('ConnexUS (staging): Telnyx SDK ready');
+        },
+        onError: (String error) {
+          Logger.error(
+            'ConnexUS (staging): Telnyx initialization error - $error',
+          );
+        },
+        child: const ConnexUSApp(),
+      ),
     ),
   );
 }

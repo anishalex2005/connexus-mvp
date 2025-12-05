@@ -980,3 +980,126 @@ Use this section to track Task 17 progress and outputs.
 - `RegistrationRetryService` and `CallRetryService` are registered via the existing `GetIt` container in `injection.dart` to keep DI consistent with Tasks 13–16 instead of introducing a second service locator file.
 - The registration service currently uses a simulated registration flow with occasional failures to validate backoff and UI behavior; before production, `_performRegistration()` should be updated to call into `TelnyxService` and the simulated failure branch should be removed.
 - Retry state streams (`RetryState` + `RetryStatus`) are ready to be hooked into future call UI work (Tasks 19–25) and call-quality metrics (Task 18) using the `AnimatedRetryStatusWidget`.
+
+# ConnexUS Task 18 Checklist (Test Call Quality Metrics)
+
+Use this section to track Task 18 progress and outputs.
+
+## Task 18 Deliverables
+
+- [x] Call quality metrics data model
+  - [x] `connexus_app/lib/data/models/call_quality_metrics.dart`
+- [x] Quality thresholds configuration
+  - [x] `connexus_app/lib/core/constants/quality_thresholds.dart`
+- [x] Real-time call quality monitoring service
+  - [x] `connexus_app/lib/data/services/call_quality_service.dart`
+- [x] Quality metrics logger for analytics
+  - [x] `connexus_app/lib/data/services/quality_metrics_logger.dart`
+- [x] Call quality UI widgets
+  - [x] `connexus_app/lib/presentation/widgets/call_quality_indicator.dart`
+- [x] Dependency injection wiring
+  - [x] `connexus_app/lib/injection.dart` updated to register:
+    - [x] Shared `Logger` singleton from `package:logger`
+    - [x] `CallQualityService` as a lazy singleton
+    - [x] `QualityMetricsLogger` with `MetricsLoggerConfig`
+    - [x] `TelnyxService` now receives `CallQualityService` and `QualityMetricsLogger`
+- [x] Telnyx service integration
+  - [x] `connexus_app/lib/data/services/telnyx_service.dart` updated with:
+    - [x] `startQualityMonitoring` and `stopQualityMonitoring` methods using `RTCPeerConnection`
+    - [x] Quality streams and getters (`qualityMetricsStream`, `qualityLevelStream`, `currentQualityMetrics`, `currentQualityLevel`)
+    - [x] Optional `onQualityChange` callback for UI/reactive listeners
+- [x] Unit and widget tests
+  - [x] `connexus_app/test/services/call_quality_service_test.dart`
+  - [x] `connexus_app/test/widgets/call_quality_indicator_test.dart`
+
+## Notes
+
+- Call quality metrics are sampled periodically from the underlying `RTCPeerConnection` via `CallQualityService`, using jitter, RTT, packet loss, and bitrate to compute a 0–100 quality score and `CallQualityLevel`.
+- `QualityMetricsLogger` persists per-call quality summaries and raw samples to JSONL files under the app documents directory, with optional remote submission when a backend endpoint is available.
+- `TelnyxService` exposes convenience methods and streams so future call UI (Tasks 19–22) can subscribe to quality updates and display them via `CallQualityIndicator` / `CallQualityDetailsCard`.
+- Remote metrics API integration remains disabled by default (`enableRemoteLogging: false`) and can be turned on once the backend analytics endpoint is ready.
+
+# ConnexUS Task 19 Checklist (Create Incoming Call UI Screen)
+
+Use this section to track Task 19 progress and outputs.
+
+## Task 19 Deliverables
+
+- [x] Call model for incoming/active calls
+  - [x] `connexus_app/lib/domain/models/call_model.dart`
+- [x] Call state provider with ringtone, vibration, and wakelock handling
+  - [x] `connexus_app/lib/presentation/providers/call_provider.dart`
+- [x] Call-specific color system
+  - [x] `connexus_app/lib/core/constants/call_colors.dart`
+- [x] Incoming call UI widgets
+  - [x] `connexus_app/lib/presentation/widgets/call/caller_avatar.dart`
+  - [x] `connexus_app/lib/presentation/widgets/call/slide_to_answer.dart`
+  - [x] `connexus_app/lib/presentation/widgets/call/call_action_button.dart`
+- [x] Incoming call screen
+  - [x] `connexus_app/lib/presentation/screens/call/incoming_call_screen.dart`
+- [x] Demo screen to simulate incoming calls
+  - [x] `connexus_app/lib/presentation/screens/demo/call_demo_screen.dart`
+- [x] Routing updates
+  - [x] `connexus_app/lib/core/routes/app_router.dart` updated with `AppRouter.incomingCall` and `AppRouter.callDemo` routes
+- [x] Provider registration and app wiring
+  - [x] `connexus_app/lib/main.dart` updated to register `CallProvider` via `MultiProvider` and wrap `ConnexUSApp` with it
+- [x] Dependencies for ringtone, vibration, wakelock, SVG, and cached images
+  - [x] `connexus_app/pubspec.yaml` updated with:
+    - [x] `flutter_ringtone_player`
+    - [x] `vibration`
+    - [x] `wakelock_plus`
+    - [x] `flutter_svg`
+    - [x] `cached_network_image`
+
+## Notes
+
+- Incoming call UI is fully functional for demo purposes with slide-to-answer, decline, quick reply bottom sheet, and animated caller avatar.
+- Actual Telnyx call control (answer/decline signaling and active call navigation) will be completed in Tasks 20–22; `CallProvider.answerCall` and `CallProvider.declineCall` currently update local state only.
+- Demo flow can be exercised by navigating to `AppRouter.callDemo` and triggering the simulated incoming call buttons.
+
+
+# ConnexUS Task 20 Checklist (Implement Answer Call Functionality)
+
+Use this section to track Task 20 progress and outputs.
+
+## Task 20 Deliverables
+
+- [x] Call state and timer support
+  - [x] Reused `connexus_app/lib/domain/models/call_model.dart` to represent call state and duration
+  - [x] Updated `connexus_app/lib/presentation/providers/call_provider.dart` to:
+    - [x] Transition answered calls to `CallState.active`
+    - [x] Start a per-second call duration timer and expose updates via `notifyListeners()`
+- [x] Audio routing service
+  - [x] Created `connexus_app/lib/core/services/audio_service.dart` to manage:
+    - [x] Incoming call ringtone and vibration
+    - [x] Active call audio mode (`voice_call` vs `normal`)
+    - [x] Speaker and mute toggles via a shared method channel
+  - [x] Integrated `AudioService` into `CallProvider` for starting/stopping incoming call audio
+- [x] Native audio handlers
+  - [x] Android:
+    - [x] Added `connexus_app/android/app/src/main/kotlin/com/example/connexus_app/AudioHandler.kt` for audio mode, speaker, and mute
+    - [x] Updated `connexus_app/android/app/src/main/kotlin/com/example/connexus_app/MainActivity.kt` to register the `com.connexus/audio` method channel
+  - [x] iOS:
+    - [x] Added `connexus_app/ios/Runner/AudioHandler.swift` for audio session control and speaker routing
+    - [x] Updated `connexus_app/ios/Runner/AppDelegate.swift` to register the `com.connexus/audio` method channel and forward calls to `AudioHandler`
+- [x] Answer call flow and active call UI
+  - [x] Updated `connexus_app/lib/presentation/screens/call/incoming_call_screen.dart` so slide-to-answer:
+    - [x] Invokes `CallProvider.answerCall()`
+    - [x] Navigates to an active call screen using `AppRouter.call`
+  - [x] Created `connexus_app/lib/presentation/screens/call/active_call_screen.dart` to:
+    - [x] Display caller name/number and human-readable call status
+    - [x] Show a live-updating call timer derived from `CallModel.duration`
+    - [x] Provide an end-call button wired to `CallProvider.endCall()`
+  - [x] Updated `connexus_app/lib/core/routes/app_router.dart` to route `AppRouter.call` to `ActiveCallScreen`
+- [x] Dependency injection and wiring
+  - [x] Updated `connexus_app/lib/injection.dart` to register `AudioService` as a lazy singleton and dispose it correctly
+  - [x] Confirmed `main.dart` continues to provide `CallProvider` via `MultiProvider`, now backed by the shared `AudioService`
+
+## Notes (Task 20)
+
+- Answering an incoming call now:
+  - Stops the ringtone/vibration via `AudioService`
+  - Transitions the call state from `incoming` to `active`
+  - Starts a call duration timer that the active call screen listens to
+  - Navigates from the incoming call UI to the active call UI (`ActiveCallScreen`)
+- Speaker and mute controls are exposed through `AudioService.setSpeaker` and `AudioService.setMute` and will be surfaced in the dedicated UI as part of later tasks (Tasks 23–25).
