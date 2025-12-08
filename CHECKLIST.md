@@ -21,9 +21,9 @@ Use this file to track progress. Mark items when completed. Links point to creat
 
 ## Accounts & Access
 
-- [ ] Telnyx developer account created
-- [ ] Telnyx API key generated and stored securely
-- [ ] Telnyx connection ID set up
+- [x] Telnyx developer account created
+- [x] Telnyx API key generated and stored securely
+- [x] Telnyx connection ID set up
 
 ## Tools Installed (local machine)
 
@@ -1103,3 +1103,75 @@ Use this section to track Task 20 progress and outputs.
   - Starts a call duration timer that the active call screen listens to
   - Navigates from the incoming call UI to the active call UI (`ActiveCallScreen`)
 - Speaker and mute controls are exposed through `AudioService.setSpeaker` and `AudioService.setMute` and will be surfaced in the dedicated UI as part of later tasks (Tasks 23–25).
+
+
+# ConnexUS Task 21 Checklist (Implement Decline Call Functionality)
+
+Use this section to track Task 21 progress and outputs.
+
+## Task 21 Deliverables
+
+- [x] Telnyx decline call support and call state updates
+  - [x] Updated `connexus_app/lib/data/services/telnyx_service.dart` to:
+    - [x] Track current call metadata (ID, caller number/name, direction)
+    - [x] Expose `updateCurrentCallContext` for higher-level call handlers
+    - [x] Implement `Future<bool> declineCall({String? reason})` with cleanup
+    - [x] Add `_cleanupAfterDecline` to stop quality monitoring and clear state
+    - [x] Expose `getCurrentCallInfo()` for logging
+    - [x] Extend `TelnyxCallState` with `declined` and `ended` values
+
+- [x] Call record model and persistence
+  - [x] Created `connexus_app/lib/domain/models/call_record.dart` with:
+    - [x] `CallRecord` value type for history/logging
+    - [x] `CallStatus` enum (`missed`, `answered`, `declined`, `failed`, `completed`)
+    - [x] JSON serialization helpers (`toJson` / `fromJson`)
+  - [x] Created local data source:
+    - [x] `connexus_app/lib/data/datasources/local/call_local_datasource.dart` using `SharedPreferences`
+    - [x] Stores up to 500 recent records, maintains pending-sync IDs
+  - [x] Created remote data source:
+    - [x] `connexus_app/lib/data/datasources/remote/call_remote_datasource.dart` targeting `POST /api/v1/calls`
+  - [x] Created call repository:
+    - [x] `connexus_app/lib/data/repositories/call_repository.dart` to save locally and best-effort sync to backend
+
+- [x] Decline call use case
+  - [x] Created `connexus_app/lib/domain/usecases/decline_call_usecase.dart` to:
+    - [x] Call `TelnyxService.declineCall`
+    - [x] Read `TelnyxService.getCurrentCallInfo()` for metadata
+    - [x] Log declined calls via `CallRepository.saveCallRecord`
+    - [x] Return a `DeclineCallResult` with `success`, `callId`, and optional `error`
+
+- [x] Provider and UI integration
+  - [x] Updated `connexus_app/lib/presentation/providers/call_provider.dart` to:
+    - [x] Inject `TelnyxService` and `DeclineCallUseCase` via `getIt`
+    - [x] Track `_isProcessing` and `_errorMessage` for decline flow
+    - [x] Call `updateCurrentCallContext` when handling incoming calls
+    - [x] Replace previous placeholder `declineCall` with new implementation that:
+      - [x] Stops ringtone/Wakelock
+      - [x] Delegates to `DeclineCallUseCase`
+      - [x] Updates `CallModel` state and clears it after a short delay
+  - [x] Updated `connexus_app/lib/presentation/screens/call/incoming_call_screen.dart` to:
+    - [x] Make `_handleDecline` async and use `CallProvider.declineCall(reason: 'user_declined')`
+    - [x] Guard against double-taps via `callProvider.isProcessing`
+    - [x] Pop the screen only on success
+    - [x] Show a red `SnackBar` with error details and a “Dismiss” action on failure
+
+- [x] Dependency injection wiring
+  - [x] Updated `connexus_app/lib/injection.dart` to register:
+    - [x] `CallLocalDataSource` and `CallRemoteDataSource` as lazy singletons
+    - [x] `CallRepository` backed by local + remote data sources
+    - [x] `DeclineCallUseCase` depending on `TelnyxService` and `CallRepository`
+
+- [x] Unit tests
+  - [x] Added `connexus_app/test/domain/usecases/decline_call_usecase_test.dart` with Mockito:
+    - [x] Generates mocks for `TelnyxService` and `CallRepository`
+    - [x] Verifies success path (decline + logging)
+    - [x] Verifies failure path (decline fails, no logging)
+    - [x] Verifies logging error does not cause decline failure
+  - [x] Ran `flutter pub run build_runner build --delete-conflicting-outputs` to generate mocks
+  - [x] Ran `flutter test test/domain/usecases/decline_call_usecase_test.dart -v` and confirmed all tests pass
+
+## Notes (Task 21)
+
+- Decline behavior is now fully wired from UI → `CallProvider` → `DeclineCallUseCase` → `TelnyxService` and call history.
+- Call logging uses a lightweight `CallRecord` model stored locally via `SharedPreferences` and synced to the backend when possible.
+- Telnyx integration remains simulated for SIP call control; when the real SDK is wired in, `TelnyxService.declineCall` can directly invoke the Telnyx client while preserving the same use case and repository interfaces.

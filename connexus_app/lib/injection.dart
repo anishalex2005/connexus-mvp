@@ -8,6 +8,9 @@ import 'core/services/audio_service.dart';
 import 'core/services/call_retry_service.dart';
 import 'core/services/registration_retry_service.dart';
 import 'core/services/retry_manager.dart';
+import 'data/datasources/local/call_local_datasource.dart';
+import 'data/datasources/remote/call_remote_datasource.dart';
+import 'data/repositories/call_repository.dart';
 import 'data/repositories/telephony_repository.dart';
 import 'data/services/call_network_handler.dart';
 import 'data/services/call_quality_service.dart';
@@ -18,6 +21,7 @@ import 'data/services/quality_metrics_logger.dart';
 import 'data/services/secure_storage_service.dart';
 import 'data/services/telnyx_service.dart';
 import 'data/services/webrtc_connection_manager.dart';
+import 'domain/usecases/decline_call_usecase.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -117,6 +121,28 @@ Future<void> configureDependencies() async {
     );
   }
 
+  // Call history / logging repository.
+  if (!getIt.isRegistered<CallLocalDataSource>()) {
+    getIt.registerLazySingleton<CallLocalDataSource>(
+      CallLocalDataSource.new,
+    );
+  }
+
+  if (!getIt.isRegistered<CallRemoteDataSource>()) {
+    getIt.registerLazySingleton<CallRemoteDataSource>(
+      CallRemoteDataSource.new,
+    );
+  }
+
+  if (!getIt.isRegistered<CallRepository>()) {
+    getIt.registerLazySingleton<CallRepository>(
+      () => CallRepository(
+        localDataSource: getIt<CallLocalDataSource>(),
+        remoteDataSource: getIt<CallRemoteDataSource>(),
+      ),
+    );
+  }
+
   // Call quality monitoring & logging.
   if (!getIt.isRegistered<CallQualityService>()) {
     getIt.registerLazySingleton<CallQualityService>(
@@ -155,6 +181,16 @@ Future<void> configureDependencies() async {
         mediaHandler: getIt<MediaHandler>(),
         qualityService: getIt<CallQualityService>(),
         qualityMetricsLogger: getIt<QualityMetricsLogger>(),
+      ),
+    );
+  }
+
+  // Use cases.
+  if (!getIt.isRegistered<DeclineCallUseCase>()) {
+    getIt.registerLazySingleton<DeclineCallUseCase>(
+      () => DeclineCallUseCase(
+        telnyxService: getIt<TelnyxService>(),
+        callRepository: getIt<CallRepository>(),
       ),
     );
   }

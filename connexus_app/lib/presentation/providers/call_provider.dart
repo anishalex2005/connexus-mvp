@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/services/audio_service.dart';
+import '../../data/services/telnyx_service.dart';
 import '../../domain/models/call_model.dart';
+import '../../domain/usecases/decline_call_usecase.dart';
 import '../../injection.dart';
 
 /// Provider that manages call state and UI updates.
@@ -14,9 +17,16 @@ class CallProvider extends ChangeNotifier {
   bool _isMuted = false;
   bool _isSpeakerOn = false;
   bool _isRinging = false;
+  bool _isProcessing = false;
+  String? _errorMessage;
 
   // Audio routing and alerts (ringtone, vibration, speaker, mute).
   late final AudioService _audioService = getIt<AudioService>();
+
+  // Telnyx integration and decline use case.
+  late final TelnyxService _telnyxService = getIt<TelnyxService>();
+  late final DeclineCallUseCase _declineCallUseCase =
+      getIt<DeclineCallUseCase>();
 
   // Getters
   CallModel? get currentCall => _currentCall;
@@ -25,6 +35,8 @@ class CallProvider extends ChangeNotifier {
   bool get isSpeakerOn => _isSpeakerOn;
   bool get isRinging => _isRinging;
   bool get isIncoming => _currentCall?.state == CallState.incoming;
+  bool get isProcessing => _isProcessing;
+  String? get errorMessage => _errorMessage;
 
   /// Handle an incoming call.
   Future<void> handleIncomingCall({
@@ -41,6 +53,14 @@ class CallProvider extends ChangeNotifier {
       callerPhotoUrl: callerPhotoUrl,
     );
 
+    // Inform TelnyxService about current call context for decline/logging.
+    _telnyxService.updateCurrentCallContext(
+      callId: callId,
+      callerNumber: callerNumber,
+      callerName: callerName,
+      direction: 'incoming',
+    );
+
     // Start ringtone + vibration via shared audio service.
     _isRinging = true;
     await _audioService.startIncomingCallAudio();
@@ -48,6 +68,7 @@ class CallProvider extends ChangeNotifier {
     // Wake the screen.
     await WakelockPlus.enable();
 
+    _errorMessage = null;
     notifyListeners();
   }
 
@@ -91,26 +112,72 @@ class CallProvider extends ChangeNotifier {
   }
 
   /// Decline the current incoming call.
-  Future<void> declineCall() async {
-    if (_currentCall == null) return;
+  ///
+  /// Returns `true` if successful, `false` otherwise.
+  Future<bool> declineCall({String? reason}) async {
+    if (_currentCall == null ||
+        _currentCall!.state != CallState.incoming) {
+      debugPrint('CallProvider: Cannot decline - no incoming call');
+      return false;
+    }
 
-    await _stopRinging();
-    await WakelockPlus.disable();
+    if (_isProcessing) {
+      debugPrint('CallProvider: Already processing an action');
+      return false;
+    }
 
-    _currentCall = _currentCall!.copyWith(
-      state: CallState.ended,
-      endTime: DateTime.now(),
-    );
-
-    _stopCallTimer();
+    _isProcessing = true;
+    _errorMessage = null;
     notifyListeners();
 
-    // Clear call after a short delay for UI transition.
-    await Future.delayed(const Duration(milliseconds: 500));
-    _currentCall = null;
-    notifyListeners();
+    try {
+      debugPrint('CallProvider: Declining call...');
 
-    // Note: Actual Telnyx decline logic will be added in Task 21.
+      // Stop local ringing first for immediate feedback.
+      await _stopRinging();
+
+      // Execute domain use case (Telnyx + logging).
+      final DeclineCallResult result =
+          await _declineCallUseCase.execute(
+        reason: reason ?? 'user_declined',
+      );
+
+      if (result.success) {
+        debugPrint('CallProvider: Call declined successfully');
+
+        _currentCall = _currentCall!.copyWith(
+          state: CallState.ended,
+          endTime: DateTime.now(),
+        );
+
+        _stopCallTimer();
+        await WakelockPlus.disable();
+
+        notifyListeners();
+
+        // Clear call after a short delay for UI transition.
+        await Future<void>.delayed(
+          const Duration(milliseconds: 500),
+        );
+        _currentCall = null;
+        notifyListeners();
+
+        return true;
+      } else {
+        _errorMessage = result.error ?? 'Failed to decline call';
+        debugPrint('CallProvider: Decline failed: $_errorMessage');
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Error declining call: $e';
+      debugPrint('CallProvider: Exception: $_errorMessage');
+      notifyListeners();
+      return false;
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
   }
 
   /// End the current active call.
@@ -132,7 +199,7 @@ class CallProvider extends ChangeNotifier {
     notifyListeners();
 
     // Clear call after delay.
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future<void>.delayed(const Duration(milliseconds: 500));
     _currentCall = null;
     notifyListeners();
   }
@@ -159,6 +226,12 @@ class CallProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears any error state.
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _stopRinging();
@@ -167,3 +240,4 @@ class CallProvider extends ChangeNotifier {
     super.dispose();
   }
 }
+

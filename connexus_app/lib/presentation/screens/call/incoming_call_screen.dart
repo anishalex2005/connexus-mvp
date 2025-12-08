@@ -72,10 +72,35 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     Navigator.of(context).pushReplacementNamed(AppRouter.call);
   }
 
-  void _handleDecline(BuildContext context) {
+  Future<void> _handleDecline(BuildContext context) async {
     final callProvider = context.read<CallProvider>();
-    callProvider.declineCall();
-    Navigator.of(context).pop();
+
+    // Prevent duplicate taps while processing.
+    if (callProvider.isProcessing) return;
+
+    final bool success = await callProvider.declineCall(
+      reason: 'user_declined',
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      // Navigate back to previous screen.
+      Navigator.of(context).pop();
+    } else if (callProvider.errorMessage != null) {
+      // Show error snackbar.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(callProvider.errorMessage!),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Dismiss',
+            textColor: Colors.white,
+            onPressed: () => callProvider.clearError(),
+          ),
+        ),
+      );
+    }
   }
 
   void _handleMessage(BuildContext context) {

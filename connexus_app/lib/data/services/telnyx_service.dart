@@ -88,15 +88,24 @@ class TelnyxService {
   Timer? _retryTimer;
   bool _isIntentionalDisconnect = false;
 
-  // Call state placeholder (will be expanded in later call-related tasks).
+  // Call state placeholder (expanded in Task 21 for decline handling).
   final BehaviorSubject<TelnyxCallState> _callStateSubject =
       BehaviorSubject<TelnyxCallState>.seeded(TelnyxCallState.idle);
 
   /// Current call start time for duration tracking (used with quality metrics).
   DateTime? _callStartTime;
 
-  /// Current call ID for logging quality metrics.
+  /// Current call ID for logging quality metrics and call records.
   String? _currentCallId;
+
+  /// Current caller number for logging and decline metadata.
+  String? _currentCallerNumber;
+
+  /// Current caller display name for logging and decline metadata.
+  String? _currentCallerName;
+
+  /// Current call direction (`incoming` or `outgoing`) for logging.
+  String _currentCallDirection = 'incoming';
 
   /// Optional external callback when quality level changes.
   void Function(CallQualityLevel)? onQualityChange;
@@ -544,6 +553,102 @@ class TelnyxService {
 
     return completer.future;
   }
+
+  // ============ Call Control & Decline (Task 21) ============
+
+  /// Updates the current call context so decline/logging have caller metadata.
+  ///
+  /// This should be called by higher-level call handlers (e.g. [CallProvider])
+  /// when an incoming/outgoing call is created.
+  void updateCurrentCallContext({
+    required String callId,
+    required String callerNumber,
+    String? callerName,
+    String direction = 'incoming',
+  }) {
+    _currentCallId = callId;
+    _currentCallerNumber = callerNumber;
+    _currentCallerName = callerName;
+    _currentCallDirection = direction;
+  }
+
+  /// Declines an incoming call.
+  ///
+  /// In a real Telnyx integration this would invoke the Telnyx SDK to reject
+  /// the SIP INVITE (e.g. 486 Busy Here). In this simulated environment we
+  /// update internal call state and trigger cleanup so higher-level logic can
+  /// react consistently.
+  ///
+  /// Returns `true` if decline was handled successfully, `false` otherwise.
+  Future<bool> declineCall({String? reason}) async {
+    try {
+      if (_currentCallId == null) {
+        debugPrint('[TelnyxService] No active call to decline');
+        return false;
+      }
+
+      debugPrint(
+        '[TelnyxService] Declining call $_currentCallId '
+        'with reason: ${reason ?? "user_declined"}',
+      );
+
+      // Update call state to reflect a declined call.
+      _callStateSubject.add(TelnyxCallState.declined);
+
+      // Perform cleanup (stop quality monitoring, clear metadata, etc.).
+      await _cleanupAfterDecline();
+
+      debugPrint('[TelnyxService] Call declined successfully');
+      return true;
+    } catch (e, stackTrace) {
+      debugPrint('[TelnyxService] Error declining call: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      // Attempt cleanup even if decline simulation fails.
+      await _cleanupAfterDecline();
+
+      return false;
+    }
+  }
+
+  /// Cleans up resources after a call is declined/ended.
+  Future<void> _cleanupAfterDecline() async {
+    try {
+      // Stop quality monitoring and log summary if available.
+      await stopQualityMonitoring(
+        callerNumber: _currentCallerNumber,
+        callDirection: _currentCallDirection,
+      );
+
+      // Clear current call metadata.
+      _currentCallId = null;
+      _currentCallerNumber = null;
+      _currentCallerName = null;
+      _currentCallDirection = 'incoming';
+
+      // Notify listeners that the call lifecycle has ended.
+      _callStateSubject.add(TelnyxCallState.ended);
+
+      debugPrint('[TelnyxService] Cleanup after decline completed');
+    } catch (e) {
+      debugPrint('[TelnyxService] Error during cleanup after decline: $e');
+    }
+  }
+
+  /// Gets the current call's caller information for logging.
+  ///
+  /// Returns a simple map intended for persistence via repositories.
+  Map<String, dynamic>? getCurrentCallInfo() {
+    if (_currentCallId == null) return null;
+
+    return <String, dynamic>{
+      'callId': _currentCallId,
+      'callerNumber': _currentCallerNumber ?? 'Unknown',
+      'callerName': _currentCallerName ?? 'Unknown',
+      'direction': _currentCallDirection,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+  }
 }
 
 /// High-level Telnyx call states to be consumed by network handlers and UI.
@@ -554,5 +659,9 @@ enum TelnyxCallState {
   active,
   onHold,
   disconnecting,
+  /// Call was explicitly declined by the user.
+  declined,
+  /// Call lifecycle finished (ended, either locally or remotely).
+  ended,
   error,
 }
