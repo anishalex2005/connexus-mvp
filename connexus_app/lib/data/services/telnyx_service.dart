@@ -92,6 +92,10 @@ class TelnyxService {
   final BehaviorSubject<TelnyxCallState> _callStateSubject =
       BehaviorSubject<TelnyxCallState>.seeded(TelnyxCallState.idle);
 
+  /// Events related to the current call (end, quality changes, etc.).
+  final StreamController<TelnyxCallEvent> _callEventsController =
+      StreamController<TelnyxCallEvent>.broadcast();
+
   /// Current call start time for duration tracking (used with quality metrics).
   DateTime? _callStartTime;
 
@@ -153,6 +157,10 @@ class TelnyxService {
   /// Current high-level Telnyx call state.
   TelnyxCallState get callState =>
       _callStateSubject.valueOrNull ?? TelnyxCallState.idle;
+
+  /// Stream of high-level call events used by the Active Call UI.
+  Stream<TelnyxCallEvent> get callEvents =>
+      _callEventsController.stream;
 
   /// WebRTC connection state stream (underlying RTCPeerConnection).
   Stream<WebRTCConnectionState> get webrtcConnectionStateStream =>
@@ -374,6 +382,7 @@ class TelnyxService {
     _connectionStateSubject.close();
     _connectionEventsSubject.close();
     _callStateSubject.close();
+    _callEventsController.close();
     // ignore: discarded_futures
     _connectionManager.dispose();
     // ignore: discarded_futures
@@ -400,10 +409,21 @@ class TelnyxService {
     _currentCallId = callId ?? DateTime.now().millisecondsSinceEpoch.toString();
     _callStartTime = DateTime.now();
 
-    // Forward quality changes to external listeners.
+    // Forward quality changes to external listeners and call events.
     qualityService.onQualityChange =
         (CallQualityLevel oldLevel, CallQualityLevel newLevel) {
       onQualityChange?.call(newLevel);
+
+      final CallQualityMetrics? metrics =
+          qualityService.currentMetrics;
+      if (metrics != null) {
+        _callEventsController.add(
+          TelnyxCallEvent(
+            type: 'quality',
+            qualityScore: metrics.qualityScore,
+          ),
+        );
+      }
     };
 
     qualityService.startMonitoring(peerConnection, callId: _currentCallId);
@@ -629,6 +649,14 @@ class TelnyxService {
       // Notify listeners that the call lifecycle has ended.
       _callStateSubject.add(TelnyxCallState.ended);
 
+      // Emit a call-ended event for any listeners (e.g. Active Call UI).
+      _callEventsController.add(
+        TelnyxCallEvent(
+          type: 'ended',
+          reason: 'declined',
+        ),
+      );
+
       debugPrint('[TelnyxService] Cleanup after decline completed');
     } catch (e) {
       debugPrint('[TelnyxService] Error during cleanup after decline: $e');
@@ -649,6 +677,83 @@ class TelnyxService {
       'timestamp': DateTime.now().toIso8601String(),
     };
   }
+
+  // ============ Call Control Helpers (Task 22) ============
+
+  /// Set microphone mute state for the current call.
+  Future<void> setMute(bool muted) async {
+    await _mediaHandler.setMute(muted);
+  }
+
+  /// Set speakerphone state for the current call.
+  Future<void> setSpeaker(bool enabled) async {
+    await _mediaHandler.setSpeaker(enabled);
+  }
+
+  /// Place the current call on hold.
+  ///
+  /// In this simulated environment we simply update internal state.
+  Future<void> holdCall(String callId) async {
+    if (_currentCallId != callId) {
+      debugPrint(
+        '[TelnyxService] holdCall: callId mismatch, '
+        'current=$_currentCallId, requested=$callId',
+      );
+    }
+
+    _callStateSubject.add(TelnyxCallState.onHold);
+  }
+
+  /// Resume the current call from hold.
+  Future<void> unholdCall(String callId) async {
+    if (_currentCallId != callId) {
+      debugPrint(
+        '[TelnyxService] unholdCall: callId mismatch, '
+        'current=$_currentCallId, requested=$callId',
+      );
+    }
+
+    _callStateSubject.add(TelnyxCallState.active);
+  }
+
+  /// Send a DTMF tone for the current call.
+  ///
+  /// In a real Telnyx integration this would send DTMF via the SDK.
+  Future<void> sendDtmf(String callId, String digit) async {
+    debugPrint(
+      '[TelnyxService] Sending DTMF "$digit" for call $callId '
+      '(simulated)',
+    );
+  }
+
+  /// Hang up the current call.
+  ///
+  /// This is a simulated implementation that updates local state and
+  /// stops quality monitoring.
+  Future<void> hangup(String callId) async {
+    if (_currentCallId != callId) {
+      debugPrint(
+        '[TelnyxService] hangup: callId mismatch, '
+        'current=$_currentCallId, requested=$callId',
+      );
+    }
+
+    debugPrint('[TelnyxService] Hanging up call $callId (simulated)');
+
+    _callStateSubject.add(TelnyxCallState.disconnecting);
+
+    await stopQualityMonitoring(
+      callerNumber: _currentCallerNumber,
+      callDirection: _currentCallDirection,
+    );
+
+    _currentCallId = null;
+    _currentCallerNumber = null;
+    _currentCallerName = null;
+    _currentCallDirection = 'incoming';
+
+    _callStateSubject.add(TelnyxCallState.ended);
+  }
 }
 
 /// High-level Telnyx call states to be consumed by network handlers and UI.
@@ -664,4 +769,22 @@ enum TelnyxCallState {
   /// Call lifecycle finished (ended, either locally or remotely).
   ended,
   error,
+}
+
+/// High-level call event used by UI layers (e.g. Active Call BLoC).
+class TelnyxCallEvent {
+  /// Event type, e.g. `ended`, `quality`.
+  final String type;
+
+  /// Optional end reason when [type] is `ended`.
+  final String? reason;
+
+  /// Optional quality score (0-100) when [type] is `quality`.
+  final int? qualityScore;
+
+  TelnyxCallEvent({
+    required this.type,
+    this.reason,
+    this.qualityScore,
+  });
 }

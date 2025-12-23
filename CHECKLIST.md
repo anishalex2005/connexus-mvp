@@ -1175,3 +1175,317 @@ Use this section to track Task 21 progress and outputs.
 - Decline behavior is now fully wired from UI → `CallProvider` → `DeclineCallUseCase` → `TelnyxService` and call history.
 - Call logging uses a lightweight `CallRecord` model stored locally via `SharedPreferences` and synced to the backend when possible.
 - Telnyx integration remains simulated for SIP call control; when the real SDK is wired in, `TelnyxService.declineCall` can directly invoke the Telnyx client while preserving the same use case and repository interfaces.
+
+
+# ConnexUS Task 22 Checklist (Create Active Call UI Screen)
+
+Use this section to track Task 22 progress and outputs.
+
+## Task 22 Deliverables
+
+- [x] Call control enums and active call state model
+  - [x] `connexus_app/lib/domain/enums/call_control_action.dart` (enum + UI extensions for call actions)
+  - [x] `connexus_app/lib/domain/models/active_call_state_model.dart` (active call state model + `CallQuality` enum)
+
+- [x] Core call control and quality widgets
+  - [x] `connexus_app/lib/presentation/widgets/call/call_control_button.dart` (circular control + red `EndCallButton`)
+  - [x] `connexus_app/lib/presentation/widgets/call/dtmf_keypad.dart` (animated DTMF keypad with haptics and input display)
+  - [x] `connexus_app/lib/presentation/widgets/call/call_quality_indicator.dart` (per-call signal bars + `ActiveCallPulse` status indicator)
+  - [x] `connexus_app/lib/presentation/widgets/call/call_actions_menu.dart` (bottom sheet for recording/Bluetooth/SMS/note/contact actions)
+  - [x] `connexus_app/lib/presentation/widgets/call/call_widgets.dart` (barrel export for call widgets)
+
+- [x] Active Call BLoC and state management
+  - [x] `connexus_app/lib/presentation/bloc/active_call/active_call_event.dart` (events for mute/speaker/hold/keypad/DTMF/timer/quality/end/transfer)
+  - [x] `connexus_app/lib/presentation/bloc/active_call/active_call_state.dart` (`ActiveCallInitial`, `ActiveCallInProgress`, `ActiveCallComplete`, `ActiveCallError`)
+  - [x] `connexus_app/lib/presentation/bloc/active_call/active_call_bloc.dart`
+    - [x] Manages `ActiveCallStateModel` lifecycle and 1s duration timer
+    - [x] Wires to Telnyx call helpers for mute/speaker/hold/DTMF/hangup
+    - [x] Listens to `TelnyxService.callEvents` for `ended` and `quality` updates
+
+- [x] Telnyx service integration for active call UI
+  - [x] `connexus_app/lib/data/services/telnyx_service.dart` updated with:
+    - [x] `StreamController<TelnyxCallEvent>` and `callEvents` getter (broadcast)
+    - [x] `TelnyxCallEvent` type (`type`, `reason`, `qualityScore`)
+    - [x] `setMute`, `setSpeaker` delegating to `MediaHandler`
+    - [x] `holdCall`, `unholdCall` toggling `TelnyxCallState` between `onHold`/`active`
+    - [x] `sendDtmf` stub for DTMF signalling
+    - [x] `hangup` stub that ends the simulated call and stops quality monitoring
+    - [x] `startQualityMonitoring` now emits `quality` events (0–100) to `callEvents`
+    - [x] `_cleanupAfterDecline` emits an `ended` event with reason `declined`
+
+- [x] Active Call UI screen
+  - [x] `connexus_app/lib/presentation/screens/call/active_call_screen.dart` replaced with full-featured BLoC-based UI:
+    - [x] Reads initial call context from `CallProvider.currentCall` and dispatches `CallBecameActive`
+    - [x] Animated gradient background and `ActiveCallPulse` top-left status
+    - [x] Displays caller avatar (network image or initials), name, and number
+    - [x] Call duration badge with `MM:SS` / `HH:MM:SS` formatting driven by BLoC timer
+    - [x] Call controls: mute, keypad, speaker, hold, transfer (placeholder), add call (disabled)
+    - [x] DTMF keypad overlay with `DtmfKeypad` and `SendDtmfTone` events
+    - [x] Red `EndCallButton` wired to both `ActiveCallBloc` (`EndCall`) and `CallProvider.endCall()` for high-level state sync
+    - [x] `BlocConsumer` listener pops the route on `ActiveCallComplete` and shows snackbars on `ActiveCallError`
+
+- [x] Routing and dependency injection
+  - [x] `connexus_app/lib/injection.dart`
+    - [x] Registers `ActiveCallBloc` as a factory using `TelnyxService` from `GetIt`
+  - [x] `connexus_app/lib/core/routes/app_router.dart`
+    - [x] Imports `flutter_bloc`, `TelnyxService`, `getIt`, and `ActiveCallBloc`
+    - [x] Wraps `AppRouter.call` route in `BlocProvider<ActiveCallBloc>` and builds `ActiveCallScreen`
+
+- [x] Tests and dev dependencies
+  - [x] `connexus_app/pubspec.yaml` devDependencies updated with `mocktail` for BLoC/widget mocking
+  - [x] `connexus_app/test/presentation/screens/active_call/active_call_screen_test.dart`
+    - [x] `MockActiveCallBloc` (extends `MockBloc`) with `mocktail`
+    - [x] Verifies caller information is rendered
+    - [x] Verifies presence of core call controls (Mute/Speaker/Keypad/Hold/Transfer)
+    - [x] Verifies end call button (`Icons.call_end` + "End Call" label) is visible
+
+## Notes (Task 22)
+
+- The previous placeholder `ActiveCallScreen` that directly consumed `CallProvider` has been replaced by a richer, BLoC-driven implementation; `CallProvider` remains the source of truth for high-level call lifecycle, while `ActiveCallBloc` manages on-screen controls, timers, keypad, and per-call quality display.
+- `TelnyxService` continues to use simulated implementations for SIP/WebRTC call control; the new call-control methods (`setMute`, `setSpeaker`, `holdCall`, `unholdCall`, `sendDtmf`, `hangup`) are wired for UI integration and can be updated later to call the real Telnyx SDK without changing the BLoC or UI contracts.
+- Quality metrics from `CallQualityService` now flow into `ActiveCallBloc` via `TelnyxService.callEvents` so the active call screen can reflect real-time connection quality while a call is in progress.
+- Incoming call flows from Task 19–21 remain intact: answering an incoming call still uses `CallProvider.answerCall()` and navigates to `AppRouter.call`, which now hosts the full Active Call UI from this task.
+
+
+# ConnexUS Task 23 Checklist (Implement Hang Up Functionality)
+
+Use this section to track Task 23 progress and outputs.
+
+## Task 23 Deliverables
+
+- [x] Call end reason enum and constants
+  - [x] `connexus_app/lib/core/constants/call_constants.dart`
+    - [x] Added `CallEndReason` enum (`userHangUp`, `remoteHangUp`, `declined`, `noAnswer`, `networkError`, `connectionFailed`, `transferred`, `unknown`)
+    - [x] Provided `displayText` and `shortText` extensions for use in UI and history
+
+- [x] Call history model updates for end metadata
+  - [x] `connexus_app/lib/domain/models/call_record.dart`
+    - [x] Added optional `endReason` field persisted as `end_reason` in JSON
+    - [x] Updated `copyWith`, `toJson`, and `fromJson` to support `endReason`
+  - [x] `connexus_app/lib/domain/usecases/decline_call_usecase.dart`
+    - [x] Populates `endReason` for declined calls while keeping `declineReason` for backwards compatibility
+
+- [x] End-call domain use case and Telnyx integration
+  - [x] `connexus_app/lib/domain/usecases/end_call_usecase.dart`
+    - [x] Created `EndCallUseCase` to log ended calls with `duration` and `CallEndReason`
+    - [x] Uses `TelnyxService.getCurrentCallInfo()` to derive call ID, number, name, and direction
+    - [x] Maps `CallEndReason` + duration into `CallStatus` (`completed`, `missed`, `failed`, `answered`, `declined`)
+  - [x] `connexus_app/lib/presentation/bloc/active_call/active_call_bloc.dart`
+    - [x] Injects `EndCallUseCase` alongside `TelnyxService`
+    - [x] On `EndCall` event:
+      - [x] Calls `TelnyxService.hangup(callId)` to terminate the active call
+      - [x] Invokes `EndCallUseCase.execute` with the current BLoC-tracked duration and `CallEndReason.userHangUp`
+    - [x] On `CallEnded` event from `TelnyxService.callEvents`:
+      - [x] Maps the optional `reason` string into a `CallEndReason` (`declined`, `remoteHangUp`, `networkError`, etc.)
+      - [x] Logs non-declined ends via `EndCallUseCase` (declines remain handled by `DeclineCallUseCase`)
+
+- [x] Call ended summary screen and navigation
+  - [x] `connexus_app/lib/presentation/screens/call/call_ended_screen.dart`
+    - [x] New `CallEndedScreen` that shows:
+      - [x] End reason label using `CallEndReason.displayText`
+      - [x] Call duration (`MM:SS`) based on the final BLoC duration
+      - [x] Optional caller name/number and call details (time range, date, direction)
+    - [x] Animated fade/scale entry and auto-dismiss after 5 seconds (with manual “Done” button)
+  - [x] `connexus_app/lib/presentation/screens/call/active_call_screen.dart`
+    - [x] Imports `CallEndReason` and `CallEndedScreen`
+    - [x] Updates `BlocConsumer` listener so that when `ActiveCallComplete` is emitted:
+      - [x] Reads the current call context from `CallProvider.currentCall`
+      - [x] Infers a `CallEndReason` from the optional `endReason` string on `ActiveCallComplete`
+      - [x] `pushReplacement`s to `CallEndedScreen` with the call, reason, and total duration
+
+- [x] Audio and provider cleanup on hang up
+  - [x] `connexus_app/lib/presentation/providers/call_provider.dart`
+    - [x] Updates `endCall()` to:
+      - [x] Stop any residual ringing
+      - [x] Call `AudioService.resetAudio()` to return to normal audio mode
+      - [x] Disable `WakelockPlus` and clear internal call/mute/speaker state
+
+- [x] Dependency injection and tests
+  - [x] `connexus_app/lib/injection.dart`
+    - [x] Registers `EndCallUseCase` as a lazy singleton depending on `TelnyxService` and `CallRepository`
+    - [x] Updates `ActiveCallBloc` factory to pass the shared `EndCallUseCase`
+  - [x] `connexus_app/test/domain/usecases/end_call_usecase_test.dart`
+    - [x] Adds Mockito-based tests for `EndCallUseCase`:
+      - [x] Logs a completed call when call info is available
+      - [x] No-op when there is no current call info
+      - [x] Swallows repository errors so hang up flows are not broken
+
+## Notes (Task 23)
+
+- Hang up is now fully wired from the active call UI through `ActiveCallBloc` into `TelnyxService.hangup`, with `EndCallUseCase` ensuring that each completed call is logged to the shared `CallRepository` alongside decline events from Task 21.
+- The new `CallEndedScreen` provides a concise summary (reason, duration, direction, timestamps) and is automatically shown when the active call completes, giving users clear feedback that the call has ended.
+- Audio routing is reset back to normal mode as part of `CallProvider.endCall()`, ensuring that speaker/mic state does not leak between calls.
+- As with earlier tasks, Telnyx integration remains simulated; when the real Telnyx SDK is connected, the `hangup` implementation can be updated without changing the BLoC, use case, or UI contracts introduced here.
+
+# ConnexUS Task 24 Checklist (Implement Call Timer Widget)
+
+Use this section to track Task 24 progress and outputs.
+
+## Task 24 Deliverables
+
+- [x] Call duration tracking for active calls
+  - [x] Reused `connexus_app/lib/domain/models/call_model.dart` and `CallProvider` timer logic from Task 20 to track call duration for active calls.
+  - [x] Extended `connexus_app/lib/presentation/bloc/active_call/active_call_bloc.dart` with a 1-second `UpdateCallDuration` timer that updates `ActiveCallStateModel.callDuration`.
+- [x] Call timer UI on active call screen
+  - [x] `connexus_app/lib/presentation/screens/call/active_call_screen.dart` displays a formatted call duration badge (`MM:SS` / `HH:MM:SS`) derived from `ActiveCallStateModel.callDuration`.
+  - [x] Timer survives UI rebuilds while the call is active and stops when the call completes (`ActiveCallComplete`) or ends via hang up.
+
+## Notes (Task 24)
+
+- Although the original plan called for a standalone `CallTimerWidget`, the current implementation uses the BLoC-driven `ActiveCallStateModel.callDuration` and an inline duration badge on `ActiveCallScreen`, achieving the same user-facing behaviour with a single source of truth for call timing.
+
+# ConnexUS Task 25 Checklist (Implement Speaker/Mute Toggles)
+
+Use this section to track Task 25 progress and outputs.
+
+## Task 25 Deliverables
+
+- [x] Audio output type enum
+  - [x] `connexus_app/lib/domain/models/audio_output_type.dart`
+- [x] Audio control state model
+  - [x] `connexus_app/lib/domain/models/audio_control_state.dart`
+- [x] Audio control service
+  - [x] `connexus_app/lib/data/services/audio_control_service.dart` (wraps `MediaHandler` + `AudioService`, integrates `audio_session` for VoIP audio session configuration and device detection)
+- [x] Audio control provider
+  - [x] `connexus_app/lib/presentation/providers/audio_control_provider.dart`
+- [x] UI widgets for mute/speaker
+  - [x] `connexus_app/lib/presentation/widgets/call/mute_button.dart`
+  - [x] `connexus_app/lib/presentation/widgets/call/speaker_button.dart`
+  - [x] `connexus_app/lib/presentation/widgets/call/audio_control_row.dart`
+- [x] Dependency injection wiring
+  - [x] `connexus_app/lib/injection.dart` updated to register `AudioControlService` as a lazy singleton, reusing existing `MediaHandler` and `AudioService`
+- [x] Active call screen integration
+  - [x] `connexus_app/lib/presentation/screens/call/active_call_screen.dart` updated to:
+    - [x] Provide `AudioControlProvider` via `ChangeNotifierProvider`
+    - [x] Replace inline mute/speaker `CallControlButton`s with `AudioControlRow`
+    - [x] Wire `AudioControlRow` callbacks to `ActiveCallBloc` (`ToggleMute` / `ToggleSpeaker`) so BLoC state and Telnyx/WebRTC remain in sync
+- [x] Packages and platform considerations
+  - [x] `audio_session: ^0.1.18` added to `connexus_app/pubspec.yaml`
+  - [x] Reused existing native method channel `com.connexus/audio` + `AudioHandler` implementations from Task 20 for speaker/mute, avoiding duplicate platform wiring
+- [x] Unit tests
+  - [x] `connexus_app/test/services/audio_control_service_test.dart` covering:
+    - [x] `AudioControlState` defaults, `copyWith`, equality, and error factory
+    - [x] `AudioOutputType` display name and `isHandsFree` helpers
+    - [x] `AudioControlException.toString`
+  - [x] `connexus_app/test/presentation/providers/audio_control_provider_test.dart` using a `FakeAudioControlService` to verify:
+    - [x] Initial provider state
+    - [x] Updates via the underlying service stream
+    - [x] `toggleMute`, `toggleSpeaker`, `setAudioOutput`, and `clearError` behaviours
+
+## Current Feature State (Task 25)
+
+- [x] Mute/unmute toggle functional and propagated through:
+  - [x] `AudioControlService` → `MediaHandler.setMute` + native `setMute`
+  - [x] `AudioControlProvider` → `MuteButton` / `AudioControlRow`
+  - [x] `ActiveCallBloc` (`ToggleMute` event) for UI state and Telnyx integration
+- [x] Speaker toggle functional and propagated through:
+  - [x] `AudioControlService` → `MediaHandler.setSpeaker` + `AudioService.setSpeaker`
+  - [x] `AudioControlProvider` → `SpeakerButton` / `AudioControlRow`
+  - [x] `ActiveCallBloc` (`ToggleSpeaker` event) for UI state and Telnyx integration
+- [x] Bluetooth / wired headset presence detection wired via `audio_session.getDevices()` and exposed in `AudioControlState` / `SpeakerButton` UI
+- [x] Audio output selector bottom sheet (long press on speaker button) shows available outputs and switches logical output state
+- [x] Audio state reset on call end via `AudioControlService.resetForCallEnd()` and existing `AudioService.resetAudio()`
+
+## Notes (Task 25)
+
+- The existing `AudioService` / `AudioHandler` (Android/iOS) from Task 20 are reused; `AudioControlService` focuses on higher-level state, audio session configuration, and coordinating speaker/mute with `MediaHandler` rather than introducing a separate native channel.
+- Active call mute/speaker controls are now fully unified: the UI uses `AudioControlRow` for visual state and loading, while `ActiveCallBloc` continues to drive Telnyx/WebRTC behaviour via `ToggleMute` / `ToggleSpeaker` events.
+- Bluetooth and wired headset routing are limited by platform capabilities; the service exposes connection state and preferred output selection, while actual routing relies on the combination of `audio_session`, `flutter_webrtc` speakerphone toggling, and the platform audio stack.
+
+# ConnexUS Task 26 Checklist (Create Login Screen UI)
+
+Use this section to track Task 26 progress and outputs.
+
+## Task 26 Deliverables
+
+- [x] Core theme and helpers for auth screens
+  - [x] `connexus_app/lib/core/theme/app_colors.dart` (ConnexUS color palette for auth + shared UI)
+  - [x] `connexus_app/lib/core/theme/app_text_styles.dart` (typography system used by the login UI)
+  - [x] `connexus_app/lib/core/config/env_config.dart` (thin wrapper around `AppConfig` for docs compatibility)
+  - [x] `connexus_app/lib/core/utils/validators.dart` (reusable email/password/required field validators)
+- [x] Login form models and BLoC state management
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/models/email_input.dart`
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/models/password_input.dart`
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/models/models.dart` (barrel export)
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/login_state.dart`
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/login_event.dart`
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/login_bloc.dart`
+  - [x] `connexus_app/lib/presentation/bloc/auth/login/login.dart` (barrel export)
+  - [x] `connexus_app/lib/presentation/bloc/auth/auth.dart` and `connexus_app/lib/presentation/bloc/blocs.dart` updated to expose auth BLoCs
+- [x] Reusable auth widgets
+  - [x] `connexus_app/lib/presentation/widgets/common/custom_text_field.dart` (labeled input with consistent styling and error display)
+  - [x] `connexus_app/lib/presentation/widgets/common/primary_button.dart` (full-width primary button with loading state)
+  - [x] `connexus_app/lib/presentation/widgets/common/common.dart` and `connexus_app/lib/presentation/widgets/widgets.dart` (barrel exports)
+- [x] Login screen UI implementation
+  - [x] `connexus_app/lib/presentation/screens/login/login_screen.dart` replaced with BLoC-driven login UI:
+    - [x] Email and password fields using `CustomTextField` + Formz models
+    - [x] Password visibility toggle and disabled state while submitting
+    - [x] Inline validation errors and SnackBar-based submission feedback
+    - [x] "Forgot Password?" and "Sign Up" links with placeholder flows
+    - [x] Social login placeholders (Google, Apple) for future integration
+    - [x] On successful simulated login, navigates to `AppRouter.home` while preserving the previous behaviour
+- [x] Dependencies and tests
+  - [x] `connexus_app/pubspec.yaml` updated with `formz: ^0.6.1` for form validation
+  - [x] `connexus_app/test/presentation/blocs/auth/login/login_bloc_test.dart` added with bloc tests for:
+    - [x] Initial state
+    - [x] Email/password change events
+    - [x] Password visibility toggle
+    - [x] Invalid submit (no transition to submitting)
+    - [x] Valid submit (submitting → success after simulated delay)
+
+## Notes (Task 26)
+
+- The login screen now uses a dedicated `LoginBloc` + Formz input models for clean validation and submission state, while keeping navigation aligned with the existing `AppRouter` (successful login clears the stack and routes to `AppRouter.home`).
+- New theme helpers (`AppColors`, `AppTextStyles`) and common widgets (`CustomTextField`, `PrimaryButton`) are scoped to the presentation layer and can be reused by upcoming auth-related tasks (registration, password reset) without impacting existing call UI.
+- Backend API integration, session management, real auth error mapping, and wiring of the "Forgot Password" / "Sign Up" links will be completed in later tasks (28–30); for now, login uses a simulated delay and success.
+
+# ConnexUS Task 27 Checklist (Create Registration Screen UI)
+
+Use this section to track Task 27 progress and outputs.
+
+## Task 27 Deliverables
+
+- [x] Registration string constants
+  - [x] `connexus_app/lib/core/constants/registration_strings.dart`
+- [x] Password strength validator and model
+  - [x] `connexus_app/lib/core/utils/password_validator.dart` with:
+    - [x] `PasswordStrength` enum and `isAcceptable` helper
+    - [x] `PasswordValidationResult` (Equatable) with requirement flags and `requirementsMet`/`allRequirementsMet`
+    - [x] `PasswordValidator.validate`, `validatePassword`, and `validateConfirmPassword`
+- [x] Auth input widgets for registration
+  - [x] `connexus_app/lib/presentation/widgets/auth/auth_text_field.dart`
+    - [x] `AuthTextField` wrapper built on `CustomTextField` for consistent styling
+    - [x] `EmailTextField` and `PasswordTextField` convenience widgets with icons and password toggle
+  - [x] `connexus_app/lib/presentation/widgets/auth/password_strength_indicator.dart`
+    - [x] Linear strength bar with color-coded levels (weak/fair/good/strong)
+    - [x] Requirement checklist (length, uppercase, lowercase, number, special)
+  - [x] `connexus_app/lib/presentation/widgets/auth/terms_checkbox.dart`
+    - [x] Checkbox with tappable Terms of Service / Privacy Policy links
+    - [x] Inline error text support when terms are not accepted
+- [x] Registration screen UI implementation
+  - [x] `connexus_app/lib/presentation/screens/login/registration_screen.dart`
+    - [x] First name, last name, email, password, and confirm password fields using auth widgets
+    - [x] Real-time password strength indicator wired to `PasswordValidator`
+    - [x] Terms acceptance checkbox with bottom-sheet legal content placeholders
+    - [x] Form validation for required fields, email format, password strength, and matching passwords
+    - [x] Loading state and success/error SnackBars around a simulated registration call (to be replaced by Task 28)
+- [x] Routing and navigation wiring
+  - [x] `connexus_app/lib/core/routes/app_router.dart`
+    - [x] Added `register` route to `AppRouter.generateRoute` returning `RegistrationScreen`
+  - [x] `connexus_app/lib/presentation/screens/login/login_screen.dart`
+    - [x] Updated "Sign Up" link to navigate via `AppRouter.navigateTo(context, AppRouter.register)` instead of a placeholder SnackBar
+- [x] Tests for password validation and registration UI
+  - [x] `connexus_app/test/core/utils/password_validator_test.dart`
+    - [x] Covers empty/short passwords, requirement flags, acceptable strength, and confirm-password matching
+  - [x] `connexus_app/test/presentation/screens/registration/registration_screen_test.dart`
+    - [x] Verifies presence of core labels and CTA
+    - [x] Ensures validation errors show on empty submit
+    - [x] Ensures terms-required message appears when form is valid but terms are unchecked
+    - [x] Verifies password strength indicator text updates from weak to strong
+
+## Notes (Task 27)
+
+- The registration flow currently uses a simple `StatefulWidget` + `Form` and `TextEditingController`s for local validation and submission; Task 28 will introduce a dedicated registration BLoC and real API integration against `POST /api/v1/auth/register`.
+- Shared styling is aligned with the existing login screen by building on `AppColors`, `AppTextStyles`, `CustomTextField`, and the previously created `PrimaryButton`, so both auth screens feel consistent.
+- Password strength logic is encapsulated in `PasswordValidator` and `PasswordStrengthIndicator`, which can be reused by future password reset or account settings flows.
+- Legal bottom sheets use placeholder Terms of Service and Privacy Policy content that should be replaced with production-ready documents before launch.

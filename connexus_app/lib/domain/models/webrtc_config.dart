@@ -1,5 +1,3 @@
-import 'package:flutter_webrtc/flutter_webrtc.dart';
-
 /// Configuration for ICE servers used in WebRTC connections.
 class IceServerConfig {
   final String url;

@@ -122,24 +122,38 @@ class QualityMetricsLogger {
       totalScore += m.qualityScore;
 
       if (m.roundTripTime != null) {
-        totalRtt += m.roundTripTime!;
+        final double rtt = m.roundTripTime!;
+        totalRtt += rtt;
         rttCount++;
-        if (minRtt == null || m.roundTripTime! < minRtt!) {
-          minRtt = m.roundTripTime;
+
+        if (minRtt == null) {
+          minRtt = rtt;
+        } else if (rtt < minRtt) {
+          minRtt = rtt;
         }
-        if (maxRtt == null || m.roundTripTime! > maxRtt!) {
-          maxRtt = m.roundTripTime;
+
+        if (maxRtt == null) {
+          maxRtt = rtt;
+        } else if (rtt > maxRtt) {
+          maxRtt = rtt;
         }
       }
 
       if (m.jitter != null) {
-        totalJitter += m.jitter!;
+        final double jitter = m.jitter!;
+        totalJitter += jitter;
         jitterCount++;
-        if (minJitter == null || m.jitter! < minJitter!) {
-          minJitter = m.jitter;
+
+        if (minJitter == null) {
+          minJitter = jitter;
+        } else if (jitter < minJitter) {
+          minJitter = jitter;
         }
-        if (maxJitter == null || m.jitter! > maxJitter!) {
-          maxJitter = m.jitter;
+
+        if (maxJitter == null) {
+          maxJitter = jitter;
+        } else if (jitter > maxJitter) {
+          maxJitter = jitter;
         }
       }
 

@@ -48,6 +48,9 @@ class CallQualityService {
   int? _previousBytesReceived;
 
   /// Previous bytes sent for calculating bitrate.
+  // Currently tracked for potential future use in more detailed metrics, but
+  // not read anywhere, so we explicitly ignore the unused_field lint.
+  // ignore: unused_field
   int? _previousBytesSent;
 
   /// Callback for quality level changes.
@@ -217,9 +220,11 @@ class CallQualityService {
 
             // Calculate packet loss percentage.
             if (packetsReceived != null && packetsLost != null) {
-              final int totalPackets = packetsReceived! + packetsLost!;
+              final int received = packetsReceived;
+              final int lost = packetsLost;
+              final int totalPackets = received + lost;
               if (totalPackets > 0) {
-                packetLossPercent = (packetsLost! / totalPackets) * 100;
+                packetLossPercent = (lost / totalPackets) * 100;
               }
             }
           }

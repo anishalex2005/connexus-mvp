@@ -119,6 +119,12 @@ class MockTelnyxService extends _i1.Mock implements _i5.TelnyxService {
       ) as _i5.TelnyxCallState);
 
   @override
+  _i6.Stream<_i5.TelnyxCallEvent> get callEvents => (super.noSuchMethod(
+        Invocation.getter(#callEvents),
+        returnValue: _i6.Stream<_i5.TelnyxCallEvent>.empty(),
+      ) as _i6.Stream<_i5.TelnyxCallEvent>);
+
+  @override
   _i6.Stream<_i2.WebRTCConnectionState> get webrtcConnectionStateStream =>
       (super.noSuchMethod(
         Invocation.getter(#webrtcConnectionStateStream),
@@ -311,6 +317,73 @@ class MockTelnyxService extends _i1.Mock implements _i5.TelnyxService {
         ),
         returnValue: _i6.Future<bool>.value(false),
       ) as _i6.Future<bool>);
+
+  @override
+  _i6.Future<void> setMute(bool? muted) => (super.noSuchMethod(
+        Invocation.method(
+          #setMute,
+          [muted],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> setSpeaker(bool? enabled) => (super.noSuchMethod(
+        Invocation.method(
+          #setSpeaker,
+          [enabled],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> holdCall(String? callId) => (super.noSuchMethod(
+        Invocation.method(
+          #holdCall,
+          [callId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> unholdCall(String? callId) => (super.noSuchMethod(
+        Invocation.method(
+          #unholdCall,
+          [callId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> sendDtmf(
+    String? callId,
+    String? digit,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #sendDtmf,
+          [
+            callId,
+            digit,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> hangup(String? callId) => (super.noSuchMethod(
+        Invocation.method(
+          #hangup,
+          [callId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }
 
 /// A class which mocks [CallRepository].

@@ -29,9 +29,15 @@ class NetworkMonitorService {
   static const Duration _debounceDuration = Duration(milliseconds: 500);
 
   // Reconnection tracking (hook for Task 17).
+  // Some of these fields are currently only used by experimental retry logic;
+  // we keep them for future tasks but silence unused_field warnings explicitly.
+  // ignore: unused_field
   DateTime? _lastDisconnectionTime;
+  // ignore: unused_field
   int _reconnectionAttempts = 0;
+  // ignore: unused_field
   static const int _maxReconnectionAttempts = 5;
+  // ignore: unused_field
   static const Duration _reconnectionCooldown = Duration(seconds: 30);
 
   NetworkMonitorService({Connectivity? connectivity})

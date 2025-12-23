@@ -80,6 +80,7 @@ class DeclineCallUseCase {
             : CallDirection.incoming,
         status: CallStatus.declined,
         declineReason: reason ?? 'user_declined',
+        endReason: CallStatus.declined.name,
         timestamp: DateTime.now(),
         // Declined calls have no talk time duration.
         duration: Duration.zero,

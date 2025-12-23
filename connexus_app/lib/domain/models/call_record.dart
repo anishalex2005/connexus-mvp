@@ -11,6 +11,11 @@ class CallRecord {
   final CallDirection direction;
   final CallStatus status;
   final String? declineReason;
+
+  /// Optional end reason identifier (e.g. `userHangUp`, `remoteHangUp`).
+  /// Used to distinguish different end scenarios for analytics/history.
+  final String? endReason;
+
   final DateTime timestamp;
   final Duration duration;
   final String? notes;
@@ -22,6 +27,7 @@ class CallRecord {
     required this.direction,
     required this.status,
     this.declineReason,
+    this.endReason,
     required this.timestamp,
     required this.duration,
     this.notes,
@@ -35,6 +41,7 @@ class CallRecord {
     CallDirection? direction,
     CallStatus? status,
     String? declineReason,
+    String? endReason,
     DateTime? timestamp,
     Duration? duration,
     String? notes,
@@ -46,6 +53,7 @@ class CallRecord {
       direction: direction ?? this.direction,
       status: status ?? this.status,
       declineReason: declineReason ?? this.declineReason,
+      endReason: endReason ?? this.endReason,
       timestamp: timestamp ?? this.timestamp,
       duration: duration ?? this.duration,
       notes: notes ?? this.notes,
@@ -61,6 +69,7 @@ class CallRecord {
       'direction': direction.name,
       'status': status.name,
       'decline_reason': declineReason,
+      'end_reason': endReason,
       'timestamp': timestamp.toIso8601String(),
       'duration_seconds': duration.inSeconds,
       'notes': notes,
@@ -78,6 +87,7 @@ class CallRecord {
       status:
           CallStatus.values.byName(json['status'] as String? ?? 'missed'),
       declineReason: json['decline_reason'] as String?,
+      endReason: json['end_reason'] as String?,
       timestamp: DateTime.parse(json['timestamp'] as String),
       duration: Duration(
         seconds: (json['duration_seconds'] as int?) ?? 0,
@@ -88,7 +98,7 @@ class CallRecord {
 
   @override
   String toString() {
-    return 'CallRecord(id: $id, caller: $callerNumber, status: $status)';
+    return 'CallRecord(id: $id, caller: $callerNumber, status: $status, endReason: $endReason)';
   }
 }
 

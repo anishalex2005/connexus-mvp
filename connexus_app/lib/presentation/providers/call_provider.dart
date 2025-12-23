@@ -185,6 +185,10 @@ class CallProvider extends ChangeNotifier {
     if (_currentCall == null) return;
 
     await _stopRinging();
+
+    // Reset audio routing back to normal mode.
+    await _audioService.resetAudio();
+
     await WakelockPlus.disable();
 
     _currentCall = _currentCall!.copyWith(

@@ -152,3 +152,5 @@ credentials/
 # Cloud config (local only)
 config/cloud-config.json
 
+connexus_app/env/.env.development
+connexus_app/env/.env.*

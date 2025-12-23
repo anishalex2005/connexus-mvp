@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../domain/models/call_model.dart';
-import '../../presentation/screens/splash/splash_screen.dart';
-import '../../presentation/screens/login/login_screen.dart';
-import '../../presentation/screens/home/home_screen.dart';
+import '../../injection.dart';
+import '../../presentation/bloc/active_call/active_call_bloc.dart';
 import '../../presentation/screens/call/active_call_screen.dart';
 import '../../presentation/screens/call/incoming_call_screen.dart';
 import '../../presentation/screens/demo/call_demo_screen.dart';
+import '../../presentation/screens/home/home_screen.dart';
+import '../../presentation/screens/login/login_screen.dart';
+import '../../presentation/screens/login/registration_screen.dart';
+import '../../presentation/screens/splash/splash_screen.dart';
 
 /// Application routing configuration
 class AppRouter {
@@ -34,13 +39,20 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => const LoginScreen(),
         );
+      case register:
+        return MaterialPageRoute(
+          builder: (_) => const RegistrationScreen(),
+        );
       case home:
         return MaterialPageRoute(
           builder: (_) => const HomeScreen(),
         );
       case call:
         return MaterialPageRoute(
-          builder: (_) => const ActiveCallScreen(),
+          builder: (_) => BlocProvider<ActiveCallBloc>(
+            create: (_) => getIt<ActiveCallBloc>(),
+            child: const ActiveCallScreen(),
+          ),
         );
       case incomingCall:
         final call = settings.arguments;

@@ -12,8 +12,8 @@ import 'data/datasources/local/call_local_datasource.dart';
 import 'data/datasources/remote/call_remote_datasource.dart';
 import 'data/repositories/call_repository.dart';
 import 'data/repositories/telephony_repository.dart';
+import 'data/services/audio_control_service.dart';
 import 'data/services/call_network_handler.dart';
-import 'data/services/call_quality_service.dart';
 import 'data/services/ice_server_provider.dart';
 import 'data/services/media_handler.dart';
 import 'data/services/network_monitor_service.dart';
@@ -21,7 +21,10 @@ import 'data/services/quality_metrics_logger.dart';
 import 'data/services/secure_storage_service.dart';
 import 'data/services/telnyx_service.dart';
 import 'data/services/webrtc_connection_manager.dart';
+import 'data/services/call_quality_service.dart';
 import 'domain/usecases/decline_call_usecase.dart';
+import 'domain/usecases/end_call_usecase.dart';
+import 'presentation/bloc/active_call/active_call_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -195,6 +198,15 @@ Future<void> configureDependencies() async {
     );
   }
 
+  if (!getIt.isRegistered<EndCallUseCase>()) {
+    getIt.registerLazySingleton<EndCallUseCase>(
+      () => EndCallUseCase(
+        telnyxService: getIt<TelnyxService>(),
+        callRepository: getIt<CallRepository>(),
+      ),
+    );
+  }
+
   if (!getIt.isRegistered<NetworkMonitorService>()) {
     getIt.registerLazySingleton<NetworkMonitorService>(
       () => NetworkMonitorService(),
@@ -229,6 +241,26 @@ Future<void> configureDependencies() async {
       () => CallRetryService(
         retryManager: getIt<RetryManager>(),
         networkMonitor: getIt<NetworkMonitorService>(),
+      ),
+    );
+  }
+
+  // Active Call BLoC (screen-specific, created as needed).
+  if (!getIt.isRegistered<ActiveCallBloc>()) {
+    getIt.registerFactory<ActiveCallBloc>(
+      () => ActiveCallBloc(
+        telnyxService: getIt<TelnyxService>(),
+        endCallUseCase: getIt<EndCallUseCase>(),
+      ),
+    );
+  }
+
+  // Audio control service (Task 25) - manages mute/speaker/output state.
+  if (!getIt.isRegistered<AudioControlService>()) {
+    getIt.registerLazySingleton<AudioControlService>(
+      () => AudioControlService(
+        mediaHandler: getIt<MediaHandler>(),
+        audioService: getIt<AudioService>(),
       ),
     );
   }
